@@ -1,8 +1,7 @@
 import msal
-import requests
 
 from power_platform_security_assessment.consts import Requests, ResponseKeys
-from power_platform_security_assessment.base_classes import Environment
+from power_platform_security_assessment.environments_fetcher import EnvironmentsFetcher
 
 
 class SecurityAssessmentTool:
@@ -13,9 +12,6 @@ class SecurityAssessmentTool:
         self._refresh_token = None
 
     def _create_token(self):
-        """
-        Acquires an access token using the Microsoft Authentication Library (MSAL).
-        """
         app = msal.PublicClientApplication('9cee029c-6210-4654-90bb-17e6e9d36617',
                                            authority=Requests.AUTHORITY)
         result = app.acquire_token_interactive(scopes=Requests.SCOPE)
@@ -26,17 +22,12 @@ class SecurityAssessmentTool:
         else:
             raise Exception("Failed to acquire token: %s" % result.get("error_description"))
 
-    def _fetch_environments(self):
-        res = requests.get(
-            'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2021-04-01',
-            headers={'Authorization': f'Bearer {self._access_token}'})
-        return [Environment(**env) for env in res.json().get('value', [])]
-
     def run_security_assessment(self):
         self._create_token()
-        environments = self._fetch_environments()
+        environments = EnvironmentsFetcher().fetch_environments(self._access_token)
         for environment in environments:
-            print(f'Handling environment: {environment.properties.displayName}')
+            print(f"Scanning environment {environment.properties.displayName}...")
+            # Perform security assessment here
 
 
 def main():
