@@ -6,6 +6,7 @@ from power_platform_security_assessment.base_classes import Environment
 from power_platform_security_assessment.consts import Requests, ResponseKeys
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.environments_fetcher import EnvironmentsFetcher
+from power_platform_security_assessment.token_manager import TokenManager
 
 
 class SecurityAssessmentTool:
@@ -27,27 +28,27 @@ class SecurityAssessmentTool:
         else:
             raise Exception("Failed to acquire token: %s" % result.get("error_description"))
 
-    def _scan_environment(self, environment: Environment):
+    def _scan_environment(self, environment: Environment, token_manager: TokenManager):
         env_scanner = EnvironmentScanner(
             environment=environment,
-            refresh_token=self._refresh_token,
-            client_id=self._client_id,
+            token_manager=token_manager,
         )
         return env_scanner.scan_environment()
 
     def run_security_assessment(self):
         self._create_token()
         environments = EnvironmentsFetcher().fetch_environments(self._access_token)
+        token_manager = TokenManager(self._client_id, self._refresh_token)
 
         print(
-            f'{"environment name":<44} {"applications":<4}')
+            f'{"environment name":<44} {"applications":<15} {"cloud flows":<15}')
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(self._scan_environment, environment) for environment in environments]
+            futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in environments]
             for future in concurrent.futures.as_completed(futures):
                 try:
                     environment_results = future.result()
                     print(
-                        f'{environment_results["environment"]:<44} {environment_results["applications"]:<4}')
+                        f'{environment_results["environment"]:<44} {environment_results["applications"]:<15} {environment_results["cloud_flows"]:<15}')
                 except Exception as e:
                     print(f"An error occurred during environment scanning: {e}")
 

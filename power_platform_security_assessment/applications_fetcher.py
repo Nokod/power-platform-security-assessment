@@ -1,25 +1,17 @@
 from urllib.parse import urlencode
 
-import msal
 import requests
 
-from power_platform_security_assessment.base_classes import Application, Environment
+from power_platform_security_assessment.base_classes import Application
 from power_platform_security_assessment.base_resource_fetcher import BaseResourceFetcher
-from power_platform_security_assessment.consts import Requests, ResponseKeys
+from power_platform_security_assessment.consts import Requests
+from power_platform_security_assessment.token_manager import TokenManager
 
 
 class ApplicationsFetcher(BaseResourceFetcher):
-    def __init__(self, env_id: str, refresh_token: str, client_id: str):
+    def __init__(self, env_id: str, token_manager: TokenManager):
         self._application_count = 0
-        super().__init__(env_id, refresh_token, client_id)
-
-    def _fetch_access_token(self) -> str:
-        app = msal.PublicClientApplication(self._client_id)
-        result = app.acquire_token_by_refresh_token(self._refresh_token, scopes=Requests.APPLICATIONS_SCOPE)
-        if ResponseKeys.ACCESS_TOKEN in result:
-            return result[ResponseKeys.ACCESS_TOKEN]
-        else:
-            raise Exception("Failed to acquire token: %s" % result.get("error_description"))
+        super().__init__(env_id, token_manager)
 
     def _get_applications_url(self):
         environment_id_with_dot = self._env_id[:len(self._env_id) - 2] + '.' + self._env_id[len(self._env_id) - 2:]
@@ -44,7 +36,7 @@ class ApplicationsFetcher(BaseResourceFetcher):
         return applications, next_page
 
     def _fetch_canvas_apps(self):
-        token = self._fetch_access_token()
+        token = self._token_manager.fetch_access_token(Requests.APPLICATIONS_SCOPE)
         next_page_url = self._get_applications_url()
 
         while next_page_url:
