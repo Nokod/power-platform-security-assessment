@@ -1,13 +1,12 @@
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 
 from pydantic import BaseModel
 
 
-class Properties(BaseModel):
+class EnvironmentProperties(BaseModel):
     tenantId: str
     azureRegion: str
     displayName: str
-    description: str
     createdTime: str
     createdBy: Dict[str, Any]
     usedBy: Optional[Any] = None
@@ -16,26 +15,27 @@ class Properties(BaseModel):
     creationType: str
     environmentSku: str
     isDefault: bool
-    clientUris: Dict[str, str]
-    runtimeEndpoints: Dict[str, str]
-    databaseType: str
-    linkedEnvironmentMetadata: Dict[str, Any]
-    trialScenarioType: str
-    notificationMetadata: Dict[str, str]
-    retentionPeriod: str
-    states: Dict[str, Dict[str, Any]]
-    updateCadence: Dict[str, str]
-    retentionDetails: Dict[str, str]
-    protectionStatus: Dict[str, str]
-    cluster: Dict[str, str]
-    connectedGroups: List[Any]
-    lifecycleOperationsEnforcement: Dict[str, List[Dict[str, Any]]]
-    governanceConfiguration: Dict[str, str]
-    bingChatEnabled: bool
+
 
 class Environment(BaseModel):
     id: str
     type: str
     location: str
     name: str
-    properties: Properties
+    properties: EnvironmentProperties
+
+
+class ApplicationProperties(BaseModel):
+    appVersion: str
+    createdTime: str
+    lastModifiedTime: str
+    sharedGroupsCount: int
+    sharedUsersCount: int
+
+
+class Application(BaseModel):
+    id: str
+    name: str
+    type: str
+    appType: str
+    properties: ApplicationProperties

@@ -9,14 +9,15 @@ class EnvironmentsFetcher:
 
     @staticmethod
     def _display_environments(environments):
+        max_display_name_length = max([len(env.properties.displayName) for env in environments])
         print(f'Total number of environments: {len(environments)}')
         print()
         print(
-            f'{"ID":<36} {"Name":<20} {"Created By":<20} {"Create Time":<30} {"Last Activity":<30} {"Type":<10} {"State":<10}')
+            f'{"ID":<44} {"Name":<{max_display_name_length}} {"Created By":<20} {"Create Time":<30} {"Last Activity":<30} {"Type":<10} {"State":<10}')
         for env in environments:
             created_by = env.properties.createdBy.get('displayName', 'N/A')
             print(
-                f'{env.id.split('/')[-1]:<36} {env.properties.displayName:<20} {created_by:<20} {env.properties.createdTime:<30} {env.properties.lastModifiedTime:<30} {env.properties.environmentSku:<10} {env.properties.provisioningState:<10}')
+                f'{env.id.split("/")[-1]:<44} {env.properties.displayName:<{max_display_name_length}} {created_by:<20} {env.properties.createdTime:<30} {env.properties.lastModifiedTime:<30} {env.properties.environmentSku:<10} {env.properties.provisioningState:<10}')
         print()
 
     @staticmethod
