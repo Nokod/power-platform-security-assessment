@@ -30,7 +30,11 @@ class EnvironmentsFetcher:
     def _fetch_environments(token):
         res = requests.get(
             'https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2021-04-01',
-            headers={'Authorization': f'Bearer {token}'})
+            headers={
+                'Authorization': f'Bearer {token}',
+                '$expand': 'properties/scheduledLifecycleOperations',
+            }
+        )
         return [Environment(**env) for env in res.json().get('value', [])]
 
     @staticmethod

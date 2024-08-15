@@ -3,6 +3,10 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
 
+class LinkedEnvironmentMetadata(BaseModel):
+    instanceApiUrl: str
+
+
 class EnvironmentProperties(BaseModel):
     tenantId: str
     azureRegion: str
@@ -15,6 +19,7 @@ class EnvironmentProperties(BaseModel):
     creationType: str
     environmentSku: str
     isDefault: bool
+    linkedEnvironmentMetadata: Optional[LinkedEnvironmentMetadata] = None
 
 
 class Environment(BaseModel):

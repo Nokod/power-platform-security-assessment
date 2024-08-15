@@ -3,6 +3,7 @@ import concurrent.futures
 from power_platform_security_assessment.applications_fetcher import ApplicationsFetcher
 from power_platform_security_assessment.base_classes import Environment
 from power_platform_security_assessment.cloud_flows_fetcher import CloudFlowsFetcher
+from power_platform_security_assessment.desktop_flows_fetcher import DesktopFlowsFetcher
 from power_platform_security_assessment.token_manager import TokenManager
 
 
@@ -29,7 +30,16 @@ class EnvironmentScanner:
         return cloud_flow_fetcher.fetch_cloud_flows_count()
 
     def _fetch_desktop_flows(self):
-        pass
+        if not self._environment.properties.linkedEnvironmentMetadata:
+            return 0
+
+        desktop_flow_fetcher = DesktopFlowsFetcher(
+            instance_api_url=self._environment.properties.linkedEnvironmentMetadata.instanceApiUrl,
+            env_id=self._env_id,
+            token_manager=self._token_manager,
+        )
+
+        return desktop_flow_fetcher.fetch_desktop_flows_count()
 
     def _fetch_model_driven_apps(self):
         pass
