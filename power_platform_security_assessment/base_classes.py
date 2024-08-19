@@ -3,6 +3,15 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
 
+class LastActivityTimes(BaseModel):
+    lastActivityTime: str
+    lastUpdatedTime: str
+
+
+class LastActivity(BaseModel):
+    lastActivity: Optional[LastActivityTimes] = None
+
+
 class LinkedEnvironmentMetadata(BaseModel):
     instanceApiUrl: str
 
@@ -14,6 +23,7 @@ class EnvironmentProperties(BaseModel):
     createdTime: str
     createdBy: Dict[str, Any]
     usedBy: Optional[Any] = None
+    lastActivity: Optional[LastActivity] = None
     lastModifiedTime: str
     provisioningState: str
     creationType: str

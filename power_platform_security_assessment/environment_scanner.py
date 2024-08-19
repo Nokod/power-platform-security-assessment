@@ -1,12 +1,10 @@
 import concurrent.futures
 
 from power_platform_security_assessment.applications_fetcher import ApplicationsFetcher
-from power_platform_security_assessment.base_classes import Environment, User
+from power_platform_security_assessment.base_classes import Environment
 from power_platform_security_assessment.cloud_flows_fetcher import CloudFlowsFetcher
 from power_platform_security_assessment.desktop_flows_fetcher import DesktopFlowsFetcher
-from power_platform_security_assessment.model_driven_apps_fetcher import ModelDrivenAppsFetcher
 from power_platform_security_assessment.token_manager import TokenManager
-from power_platform_security_assessment.users_fetcher import UsersFetcher
 
 
 class EnvironmentScanner:
