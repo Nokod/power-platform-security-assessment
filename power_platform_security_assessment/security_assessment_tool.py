@@ -55,14 +55,13 @@ class SecurityAssessmentTool:
         token_manager = TokenManager(self._client_id, self._refresh_token)
 
         print(
-            f'{"environment name":<44} {"applications":<15} {"cloud flows":<15} {"desktop flows":<15}')
+            f'{"environment name":<44} {"applications":<15} {"cloud flows":<15} {"desktop flows":<15} {"model-driven apps":<18} {"total resources":<15}')
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in environments]
             for future in concurrent.futures.as_completed(futures):
                 try:
                     environment_results = future.result()
-                    print(
-                        f'{environment_results["environment"]:<44} {environment_results["applications"]:<15} {environment_results["cloud_flows"]:<15} {environment_results["desktop_flows"]:<15}')
+                    self._print_environment_results(environment_results)
                 except Exception as e:
                     print(f"An error occurred during environment scanning: {e}")
 

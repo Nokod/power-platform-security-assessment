@@ -43,8 +43,17 @@ class EnvironmentScanner:
 
         return desktop_flow_fetcher.fetch_desktop_flows_count()
 
-    def _fetch_model_driven_apps(self):
-        pass
+    def _fetch_model_driven_apps(self) -> int:
+        if not self._environment.properties.linkedEnvironmentMetadata:
+            return 0
+
+        model_driven_apps_fetcher = ModelDrivenAppsFetcher(
+            instance_api_url=self._environment.properties.linkedEnvironmentMetadata.instanceApiUrl,
+            env_id=self._env_id,
+            token_manager=self._token_manager,
+        )
+
+        return model_driven_apps_fetcher.fetch_model_driven_apps_count()
 
     def _fetch_connections(self):
         pass
