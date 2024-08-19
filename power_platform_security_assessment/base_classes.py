@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 
 from pydantic import BaseModel
 
@@ -12,7 +12,11 @@ class LastActivity(BaseModel):
     lastActivity: Optional[LastActivityTimes] = None
 
 
-class Properties(BaseModel):
+class LinkedEnvironmentMetadata(BaseModel):
+    instanceApiUrl: str
+
+
+class EnvironmentProperties(BaseModel):
     tenantId: str
     azureRegion: str
     displayName: str
@@ -25,20 +29,7 @@ class Properties(BaseModel):
     creationType: str
     environmentSku: str
     isDefault: bool
-    clientUris: Dict[str, str]
-    runtimeEndpoints: Dict[str, str]
-    databaseType: str
-    trialScenarioType: str
-    retentionPeriod: str
-    states: Dict[str, Dict[str, Any]]
-    updateCadence: Dict[str, str]
-    retentionDetails: Dict[str, str]
-    protectionStatus: Dict[str, str]
-    cluster: Dict[str, str]
-    connectedGroups: List[Any]
-    lifecycleOperationsEnforcement: Dict[str, List[Dict[str, Any]]]
-    governanceConfiguration: Dict[str, str]
-    bingChatEnabled: bool
+    linkedEnvironmentMetadata: Optional[LinkedEnvironmentMetadata] = None
 
 
 class Environment(BaseModel):
@@ -46,4 +37,34 @@ class Environment(BaseModel):
     type: str
     location: str
     name: str
-    properties: Properties
+    properties: EnvironmentProperties
+
+
+class ApplicationProperties(BaseModel):
+    appVersion: str
+    createdTime: str
+    lastModifiedTime: str
+    sharedGroupsCount: int
+    sharedUsersCount: int
+
+
+class Application(BaseModel):
+    id: str
+    name: str
+    type: str
+    appType: str
+    properties: ApplicationProperties
+
+
+class CloudFlowProperties(BaseModel):
+    displayName: str
+    createdTime: str
+    lastModifiedTime: str
+    state: str
+
+
+class CloudFlow(BaseModel):
+    id: str
+    name: str
+    type: str
+    properties: CloudFlowProperties
