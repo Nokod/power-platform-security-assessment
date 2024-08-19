@@ -3,14 +3,23 @@ from typing import Dict, Any, Optional, List
 from pydantic import BaseModel
 
 
+class LastActivityTimes(BaseModel):
+    lastActivityTime: str
+    lastUpdatedTime: str
+
+
+class LastActivity(BaseModel):
+    lastActivity: Optional[LastActivityTimes] = None
+
+
 class Properties(BaseModel):
     tenantId: str
     azureRegion: str
     displayName: str
-    description: str
     createdTime: str
     createdBy: Dict[str, Any]
     usedBy: Optional[Any] = None
+    lastActivity: Optional[LastActivity] = None
     lastModifiedTime: str
     provisioningState: str
     creationType: str
@@ -19,9 +28,7 @@ class Properties(BaseModel):
     clientUris: Dict[str, str]
     runtimeEndpoints: Dict[str, str]
     databaseType: str
-    linkedEnvironmentMetadata: Dict[str, Any]
     trialScenarioType: str
-    notificationMetadata: Dict[str, str]
     retentionPeriod: str
     states: Dict[str, Dict[str, Any]]
     updateCadence: Dict[str, str]
@@ -32,6 +39,7 @@ class Properties(BaseModel):
     lifecycleOperationsEnforcement: Dict[str, List[Dict[str, Any]]]
     governanceConfiguration: Dict[str, str]
     bingChatEnabled: bool
+
 
 class Environment(BaseModel):
     id: str

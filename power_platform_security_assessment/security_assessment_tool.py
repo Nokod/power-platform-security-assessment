@@ -26,7 +26,9 @@ class SecurityAssessmentTool:
         self._create_token()
         environments = EnvironmentsFetcher().fetch_environments(self._access_token)
         for environment in environments:
-            print(f"Scanning environment {environment.properties.displayName}...")
+            print(
+                f"Scanning environment {environment.properties.displayName + '...':<35} "
+                f"{environment.properties.environmentSku} {environment.properties.lastActivity.lastActivity.lastActivityTime}")
             # Perform security assessment here
 
 
