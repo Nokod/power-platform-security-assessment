@@ -19,7 +19,7 @@ class SecurityAssessmentTool:
 
     def _create_token(self):
         app = msal.PublicClientApplication('9cee029c-6210-4654-90bb-17e6e9d36617', authority=Requests.AUTHORITY)
-        result = app.acquire_token_interactive(scopes=Requests.SCOPE)
+        result = app.acquire_token_interactive(scopes=Requests.ENVIRONMENTS_SCOPE)
 
         if ResponseKeys.ACCESS_TOKEN in result:
             self._access_token = result[ResponseKeys.ACCESS_TOKEN]
@@ -35,6 +35,19 @@ class SecurityAssessmentTool:
             token_manager=token_manager,
         )
         return env_scanner.scan_environment()
+
+    @staticmethod
+    def _print_environment_results(environment_results):
+        environment_name = environment_results["environment"]
+        applications_count = environment_results["applications"]
+        cloud_flows_count = environment_results["cloud_flows"]
+        desktop_flows_count = environment_results["desktop_flows"]
+        model_driven_apps_count = environment_results["model_driven_apps"]
+        total = applications_count + cloud_flows_count + desktop_flows_count + model_driven_apps_count
+
+        print(
+            f'{environment_name:<44} {applications_count:<15} {cloud_flows_count:<15} {desktop_flows_count:<15} {model_driven_apps_count:<18} {total:<15}')
+
 
     def run_security_assessment(self):
         self._create_token()
