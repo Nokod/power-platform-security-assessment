@@ -39,3 +39,17 @@ class Application(BaseModel):
     type: str
     appType: str
     properties: ApplicationProperties
+
+
+class CloudFlowProperties(BaseModel):
+    displayName: str
+    createdTime: str
+    lastModifiedTime: str
+    state: str
+
+
+class CloudFlow(BaseModel):
+    id: str
+    name: str
+    type: str
+    properties: CloudFlowProperties

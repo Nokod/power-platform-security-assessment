@@ -2,26 +2,31 @@ import concurrent.futures
 
 from power_platform_security_assessment.applications_fetcher import ApplicationsFetcher
 from power_platform_security_assessment.base_classes import Environment
+from power_platform_security_assessment.cloud_flows_fetcher import CloudFlowsFetcher
+from power_platform_security_assessment.token_manager import TokenManager
 
 
 class EnvironmentScanner:
-    def __init__(self, environment: Environment, refresh_token: str, client_id: str):
+    def __init__(self, environment: Environment, token_manager: TokenManager):
         self._environment = environment
         self._env_id = environment.id.split('/')[-1]
-        self._refresh_token = refresh_token
-        self._client_id = client_id
+        self._token_manager = token_manager
 
     def _fetch_applications(self):
         app_fetcher = ApplicationsFetcher(
             env_id=self._env_id,
-            refresh_token=self._refresh_token,
-            client_id=self._client_id,
+            token_manager=self._token_manager,
         )
 
         return app_fetcher.fetch_application_count()
 
     def _fetch_cloud_flows(self):
-        pass
+        cloud_flow_fetcher = CloudFlowsFetcher(
+            env_id=self._env_id,
+            token_manager=self._token_manager,
+        )
+
+        return cloud_flow_fetcher.fetch_cloud_flows_count()
 
     def _fetch_desktop_flows(self):
         pass
