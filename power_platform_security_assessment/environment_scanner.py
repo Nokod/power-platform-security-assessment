@@ -56,11 +56,19 @@ class EnvironmentScanner:
         return model_driven_apps_fetcher.fetch_model_driven_apps_count()
 
     def _fetch_connections(self):
-        pass
         ...
 
-    def _fetch_users(self):
-        pass
+    def _fetch_users(self) -> list[User]:
+        if not self._environment.properties.linkedEnvironmentMetadata:
+            return []
+
+        users_fetcher = UsersFetcher(
+            instance_api_url=self._environment.properties.linkedEnvironmentMetadata.instanceApiUrl,
+            env_id=self._env_id,
+            token_manager=self._token_manager,
+        )
+
+        return users_fetcher.fetch_users()
 
     def scan_environment(self):
         with concurrent.futures.ThreadPoolExecutor() as executor:

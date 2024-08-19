@@ -58,3 +58,11 @@ class CloudFlow(BaseModel):
     name: str
     type: str
     properties: CloudFlowProperties
+
+
+class User(BaseModel):
+    domainname: str
+    isdisabled: bool
+    azurestate: int
+    fullname: str
+    azureactivedirectoryobjectid: Optional[str] = None

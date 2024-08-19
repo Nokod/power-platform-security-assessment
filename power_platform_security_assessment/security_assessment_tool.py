@@ -2,7 +2,7 @@ import concurrent.futures
 
 import msal
 
-from power_platform_security_assessment.base_classes import Environment
+from power_platform_security_assessment.base_classes import Environment, User
 from power_platform_security_assessment.consts import Requests, ResponseKeys
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.environments_fetcher import EnvironmentsFetcher
@@ -48,11 +48,19 @@ class SecurityAssessmentTool:
         print(
             f'{environment_name:<44} {applications_count:<15} {cloud_flows_count:<15} {desktop_flows_count:<15} {model_driven_apps_count:<18} {total:<15}')
 
+    @staticmethod
+    def _handle_environment_users(users_list, environment_results):
+        environment_users: list[User] = environment_results["users"]
+        for user in environment_users:
+            user_id = user.azureactivedirectoryobjectid
+            if user_id and user_id not in [u.azureactivedirectoryobjectid for u in users_list]:
+                users_list.append(user)
 
     def run_security_assessment(self):
         self._create_token()
         environments = EnvironmentsFetcher().fetch_environments(self._access_token)
         token_manager = TokenManager(self._client_id, self._refresh_token)
+        users_list: list[User] = []
 
         print(
             f'{"environment name":<44} {"applications":<15} {"cloud flows":<15} {"desktop flows":<15} {"model-driven apps":<18} {"total resources":<15}')
@@ -62,6 +70,7 @@ class SecurityAssessmentTool:
                 try:
                     environment_results = future.result()
                     self._print_environment_results(environment_results)
+                    self._handle_environment_users(users_list, environment_results)
                 except Exception as e:
                     print(f"An error occurred during environment scanning: {e}")
 
