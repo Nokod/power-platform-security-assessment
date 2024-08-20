@@ -51,10 +51,11 @@ class SecurityAssessmentTool:
     @staticmethod
     def _handle_environment_users(users_list, environment_results):
         environment_users: list[User] = environment_results["users"]
-        for user in environment_users:
-            user_id = user.azureactivedirectoryobjectid
-            if user_id and user_id not in [u.azureactivedirectoryobjectid for u in users_list]:
-                users_list.append(user)
+        existing_user_ids = {u.azureactivedirectoryobjectid for u in users_list}
+        users_list.extend(
+            user for user in environment_users
+            if user.azureactivedirectoryobjectid and user.azureactivedirectoryobjectid not in existing_user_ids
+        )
 
     def run_security_assessment(self):
         self._create_token()
