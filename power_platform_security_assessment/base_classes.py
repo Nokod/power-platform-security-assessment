@@ -76,3 +76,30 @@ class User(BaseModel):
     azurestate: int
     fullname: str
     azureactivedirectoryobjectid: Optional[str] = None
+
+
+class ConnectorMetadata(BaseModel):
+    source: str
+
+
+class ConnectorProperties(BaseModel):
+    displayName: str
+    metadata: ConnectorMetadata
+
+
+class Connector(BaseModel):
+    name: str
+    properties: ConnectorProperties
+
+    def __hash__(self):
+        return hash(self.name)
+
+
+class ConnectionExtended(BaseModel):
+    name: str
+    connector: Connector
+
+
+class Connection(BaseModel):
+    name: str
+    id: str
