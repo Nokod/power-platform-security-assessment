@@ -25,7 +25,7 @@ class ConnectionsFetcher(BaseResourceFetcher):
         params = {"api-version": "2016-11-01"}
         return f'https://api.powerapps.com/providers/Microsoft.PowerApps/scopes/admin/environments/{self._env_id}/connections?{urlencode(params)}'
 
-    def _fetch_connectors(self, token: str, used_connectors_names: list[str]) -> list[Connector]:
+    def _fetch_connectors(self, token: str, connector_names: list[str]) -> list[Connector]:
         response_data = self._fetch_single_page(
             url='https://api.powerapps.com/api/invoke',
             headers={
@@ -42,22 +42,22 @@ class ConnectionsFetcher(BaseResourceFetcher):
         )
         custom_connectors = [Connector(**connector) for connector in response_data.get('value', [])]
 
-        additional_used_connectors = [
-            Connector(**self._fetch_single_page(
-                url='https://api.powerapps.com/api/invoke',
-                headers={
-                    'x-ms-path-query': f'/providers/Microsoft.PowerApps/apis/{connector_name}?showApisWithToS=true&$expand=permissions&$filter=environment eq \'{self._env_id}\'&api-version=2020-06-01',
-                    'Authorization': f'Bearer {token}',
-                }
-            ))
-            for connector_name in used_connectors_names
-            if connector_name not in {connector.name for connector in connectors + custom_connectors}
-        ]
+        additional_used_connectors = []
+        for connector_name in connector_names:
+            if connector_name not in {connector.name for connector in connectors + custom_connectors}:
+                connector_data = self._fetch_single_page(
+                    url='https://api.powerapps.com/api/invoke',
+                    headers={
+                        'x-ms-path-query': f'/providers/Microsoft.PowerApps/apis/{connector_name}?showApisWithToS=true&$expand=permissions&$filter=environment eq \'{self._env_id}\'&api-version=2020-06-01',
+                        'Authorization': f'Bearer {token}',
+                    }
+                )
+                additional_used_connectors.append(Connector(**connector_data))
 
         return [
             connector for connector
             in connectors + custom_connectors + additional_used_connectors
-            if connector.name != 'shared_logicflows'
+            if connector.name != 'shared_logicflows' and connector.name in connector_names
         ]
 
     def _fetch_single_page_connections(self, token: str, url: str) -> tuple[list[ConnectionWithConnectorName], str]:
@@ -94,9 +94,10 @@ class ConnectionsFetcher(BaseResourceFetcher):
     def fetch_connections(self) -> list[ConnectionExtended]:
         token = self._token_manager.fetch_access_token(Requests.ENVIRONMENTS_SCOPE)
         connections = self._fetch_all_connections(token)
+        used_connector_names = list({connection.connector_name for connection in connections})
         connectors = self._fetch_connectors(
             token=token,
-            used_connectors_names=list({connection.connector_name for connection in connections})
+            connector_names=used_connector_names
         )
 
         return [
