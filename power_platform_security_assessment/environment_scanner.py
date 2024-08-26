@@ -1,13 +1,13 @@
 import concurrent.futures
 
-from power_platform_security_assessment.applications_fetcher import ApplicationsFetcher
-from power_platform_security_assessment.base_classes import Environment, User
-from power_platform_security_assessment.cloud_flows_fetcher import CloudFlowsFetcher
-from power_platform_security_assessment.connections_fetcher import ConnectionsFetcher
-from power_platform_security_assessment.desktop_flows_fetcher import DesktopFlowsFetcher
-from power_platform_security_assessment.model_driven_apps_fetcher import ModelDrivenAppsFetcher
+from power_platform_security_assessment.base_classes import Environment, User, Application, CloudFlow
+from power_platform_security_assessment.fetchers.applications_fetcher import ApplicationsFetcher
+from power_platform_security_assessment.fetchers.cloud_flows_fetcher import CloudFlowsFetcher
+from power_platform_security_assessment.fetchers.connections_fetcher import ConnectionsFetcher
+from power_platform_security_assessment.fetchers.desktop_flows_fetcher import DesktopFlowsFetcher
+from power_platform_security_assessment.fetchers.model_driven_apps_fetcher import ModelDrivenAppsFetcher
+from power_platform_security_assessment.fetchers.users_fetcher import UsersFetcher
 from power_platform_security_assessment.token_manager import TokenManager
-from power_platform_security_assessment.users_fetcher import UsersFetcher
 
 
 class EnvironmentScanner:
@@ -16,21 +16,21 @@ class EnvironmentScanner:
         self._env_id = environment.id.split('/')[-1]
         self._token_manager = token_manager
 
-    def _fetch_applications(self) -> int:
+    def _fetch_applications(self) -> list[Application]:
         app_fetcher = ApplicationsFetcher(
             env_id=self._env_id,
             token_manager=self._token_manager,
         )
 
-        return app_fetcher.fetch_application_count()
+        return app_fetcher.fetch_applications()
 
-    def _fetch_cloud_flows(self) -> int:
+    def _fetch_cloud_flows(self) -> list[CloudFlow]:
         cloud_flow_fetcher = CloudFlowsFetcher(
             env_id=self._env_id,
             token_manager=self._token_manager,
         )
 
-        return cloud_flow_fetcher.fetch_cloud_flows_count()
+        return cloud_flow_fetcher.fetch_cloud_flows()
 
     def _fetch_desktop_flows(self) -> int:
         if not self._environment.properties.linkedEnvironmentMetadata:

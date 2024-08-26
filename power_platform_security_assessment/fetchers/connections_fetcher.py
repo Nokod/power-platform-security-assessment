@@ -3,8 +3,8 @@ from urllib.parse import urlencode
 from pydantic import BaseModel
 
 from power_platform_security_assessment.base_classes import Connector, ConnectionExtended, Connection
-from power_platform_security_assessment.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.consts import Requests
+from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
 
 
@@ -14,12 +14,11 @@ class ConnectionWithConnectorName(BaseModel):
 
 
 class ConnectionsFetcher(BaseResourceFetcher):
+    _CONNECTORS_URL = 'https://api.powerapps.com/api/invoke'
+    _IGNORED_CONNECTORS = ['shared_logicflows']
+
     def __init__(self, env_id: str, token_manager: TokenManager):
         super().__init__(env_id, token_manager)
-
-    def _get_connections_for_connector_url(self, connector: Connector):
-        params = {"api-version": "2016-11-01"}
-        return f'https://api.powerapps.com/providers/Microsoft.PowerApps/scopes/admin/environments/{self._env_id}/apis/{connector.name}/connections?{urlencode(params)}'
 
     def _get_all_connections_url(self):
         params = {"api-version": "2016-11-01"}
@@ -27,7 +26,7 @@ class ConnectionsFetcher(BaseResourceFetcher):
 
     def _fetch_connectors(self, token: str, connector_names: list[str]) -> list[Connector]:
         response_data = self._fetch_single_page(
-            url='https://api.powerapps.com/api/invoke',
+            url=self._CONNECTORS_URL,
             headers={
                 'x-ms-path-query': f'/providers/Microsoft.PowerApps/apis?showApisWithToS=true&$filter=environment eq \'{self._env_id}\'&api-version=2020-06-01',
                 'Authorization': f'Bearer {token}',
@@ -46,7 +45,7 @@ class ConnectionsFetcher(BaseResourceFetcher):
         for connector_name in connector_names:
             if connector_name not in {connector.name for connector in connectors + custom_connectors}:
                 connector_data = self._fetch_single_page(
-                    url='https://api.powerapps.com/api/invoke',
+                    url=self._CONNECTORS_URL,
                     headers={
                         'x-ms-path-query': f'/providers/Microsoft.PowerApps/apis/{connector_name}?showApisWithToS=true&$expand=permissions&$filter=environment eq \'{self._env_id}\'&api-version=2020-06-01',
                         'Authorization': f'Bearer {token}',
@@ -57,7 +56,7 @@ class ConnectionsFetcher(BaseResourceFetcher):
         return [
             connector for connector
             in connectors + custom_connectors + additional_used_connectors
-            if connector.name != 'shared_logicflows' and connector.name in connector_names
+            if connector.name in connector_names and connector.name not in self._IGNORED_CONNECTORS
         ]
 
     def _fetch_single_page_connections(self, token: str, url: str) -> tuple[list[ConnectionWithConnectorName], str]:
@@ -72,7 +71,7 @@ class ConnectionsFetcher(BaseResourceFetcher):
                 connector_name=connector_name,
             )
             for connection in connections
-            if (connector_name := connection.id.split('/')[-3]) != 'shared_logicflows'
+            if (connector_name := connection.id.split('/')[-3]) not in self._IGNORED_CONNECTORS
         ]
         next_page = response_data.get('nextLink', None)
 
