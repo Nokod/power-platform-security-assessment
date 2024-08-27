@@ -1,11 +1,13 @@
 import concurrent.futures
 
 import msal
+from pydash import flatten_deep
 
 from power_platform_security_assessment.base_classes import Environment, User, Connector, ConnectionExtended
 from power_platform_security_assessment.consts import Requests, ResponseKeys
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
+from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
 from power_platform_security_assessment.token_manager import TokenManager
 
 
@@ -98,11 +100,21 @@ class SecurityAssessmentTool:
                 f'{connector.name:<22} {connector.properties.metadata.source:<22} {connections_count:<22}')
         print()
 
-    def _handle_results(self, environments_results):
-        self._display_environment_results(environments_results)
+    @staticmethod
+    def _display_app_developers(all_applications, all_cloud_flows, users_list, environments):
+        app_developer_analyzer = AppDeveloperAnalyzer(all_applications, all_cloud_flows, users_list, environments)
+        app_developers_result = app_developer_analyzer.analyze()
+        print(app_developers_result.textual_report)
+
+    def _handle_results(self, environments_results: list, environments: list[Environment]):
         users_list = self._handle_environment_users(environments_results)
+        all_applications = flatten_deep([env_results["applications"] for env_results in environments_results])
+        all_cloud_flows = flatten_deep([env_results["cloud_flows"] for env_results in environments_results])
+
+        self._display_environment_results(environments_results)
         self._display_users(users_list)
         self._print_connections(environments_results)
+        self._display_app_developers(all_applications, all_cloud_flows, users_list, environments)
 
     def run_security_assessment(self):
         self._create_token()
@@ -118,7 +130,7 @@ class SecurityAssessmentTool:
                 except Exception as e:
                     print(f"An error occurred during environment scanning: {e}")
 
-        self._handle_results(environments_results)
+        self._handle_results(environments_results, environments)
 
 
 def main():
