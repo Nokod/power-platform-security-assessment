@@ -5,7 +5,7 @@ import msal
 from power_platform_security_assessment.base_classes import Environment, User, Connector, ConnectionExtended
 from power_platform_security_assessment.consts import Requests, ResponseKeys
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
-from power_platform_security_assessment.environments_fetcher import EnvironmentsFetcher
+from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
 from power_platform_security_assessment.token_manager import TokenManager
 
 
@@ -43,8 +43,8 @@ class SecurityAssessmentTool:
 
         for environment_results in environments_results:
             environment_name = environment_results["environment"]
-            applications_count = environment_results["applications"]
-            cloud_flows_count = environment_results["cloud_flows"]
+            applications_count = len(environment_results["applications"])
+            cloud_flows_count = len(environment_results["cloud_flows"])
             desktop_flows_count = environment_results["desktop_flows"]
             model_driven_apps_count = environment_results["model_driven_apps"]
             total = applications_count + cloud_flows_count + desktop_flows_count + model_driven_apps_count

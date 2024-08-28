@@ -1,8 +1,8 @@
 from urllib.parse import urlencode
 
 from power_platform_security_assessment.base_classes import CloudFlow
-from power_platform_security_assessment.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.consts import Requests
+from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
 
 
@@ -26,15 +26,16 @@ class CloudFlowsFetcher(BaseResourceFetcher):
 
         return cloud_flows, next_page
 
-    def _fetch_cloud_flows(self):
+    def _fetch_cloud_flows(self) -> list[CloudFlow]:
         token = self._token_manager.fetch_access_token(Requests.ENVIRONMENTS_SCOPE)
         next_page_url = self._get_request_url()
+        all_cloud_flows = []
 
         while next_page_url:
             cloud_flows, next_page_url = self._fetch_single_page_cloud_flows(token=token, url=next_page_url)
-            self._resource_count += len(cloud_flows)
+            all_cloud_flows.extend(cloud_flows)
 
-        return self._resource_count
+        return all_cloud_flows
 
-    def fetch_cloud_flows_count(self):
+    def fetch_cloud_flows(self) -> list[CloudFlow]:
         return self._fetch_cloud_flows()

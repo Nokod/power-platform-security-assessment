@@ -40,12 +40,20 @@ class Environment(BaseModel):
     properties: EnvironmentProperties
 
 
+class ApplicationUser(BaseModel):
+    id: str
+
+
 class ApplicationProperties(BaseModel):
     appVersion: str
     createdTime: str
     lastModifiedTime: str
     sharedGroupsCount: int
     sharedUsersCount: int
+    displayName: str
+    bypassConsent: bool
+    owner: ApplicationUser
+    createdBy: ApplicationUser
 
 
 class Application(BaseModel):
@@ -56,11 +64,16 @@ class Application(BaseModel):
     properties: ApplicationProperties
 
 
+class CloudFlowUser(BaseModel):
+    userId: Optional[str] = None
+
+
 class CloudFlowProperties(BaseModel):
     displayName: str
     createdTime: str
     lastModifiedTime: str
     state: str
+    creator: CloudFlowUser
 
 
 class CloudFlow(BaseModel):

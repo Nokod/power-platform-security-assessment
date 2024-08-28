@@ -1,8 +1,8 @@
 from urllib.parse import urlencode
 
 from power_platform_security_assessment.base_classes import Application
-from power_platform_security_assessment.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.consts import Requests
+from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
 
 
@@ -13,7 +13,10 @@ class ApplicationsFetcher(BaseResourceFetcher):
     def _get_request_url(self):
         environment_id_with_dot = f'{self._env_id[:-2]}.{self._env_id[-2:]}'
         without_dash = environment_id_with_dot.replace('-', '')
-        params = {"$select": "name", "api-version": "1"}
+        params = {
+            "$select": "name,properties.displayName,properties.bypassConsent,properties.owner.id,properties.createdBy.id",
+            "api-version": "1",
+        }
         return f'https://{without_dash}.environment.api.powerplatform.com/powerapps/apps?{urlencode(params)}'
 
     def _fetch_single_page_apps(self, token: str, url: str):
@@ -28,15 +31,16 @@ class ApplicationsFetcher(BaseResourceFetcher):
 
         return applications, next_page
 
-    def _fetch_canvas_apps(self):
+    def _fetch_canvas_apps(self) -> list[Application]:
         token = self._token_manager.fetch_access_token(Requests.APPLICATIONS_SCOPE)
         next_page_url = self._get_request_url()
+        all_apps = []
 
         while next_page_url:
             applications, next_page_url = self._fetch_single_page_apps(token=token, url=next_page_url)
-            self._resource_count += len(applications)
+            all_apps.extend(applications)
 
-        return self._resource_count
+        return all_apps
 
-    def fetch_application_count(self):
+    def fetch_applications(self) -> list[Application]:
         return self._fetch_canvas_apps()

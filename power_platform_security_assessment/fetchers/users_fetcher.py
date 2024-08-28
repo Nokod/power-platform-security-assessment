@@ -1,7 +1,7 @@
 from urllib.parse import urlencode
 
 from power_platform_security_assessment.base_classes import User
-from power_platform_security_assessment.base_resource_fetcher import BaseResourceFetcher
+from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
 
 
