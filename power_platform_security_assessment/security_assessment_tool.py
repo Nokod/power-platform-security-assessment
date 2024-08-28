@@ -8,6 +8,7 @@ from power_platform_security_assessment.consts import Requests, ResponseKeys
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
 from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
+from power_platform_security_assessment.security_features.connectors.connectors_analyzer import ConnectorsAnalyzer
 from power_platform_security_assessment.token_manager import TokenManager
 
 
@@ -40,18 +41,24 @@ class SecurityAssessmentTool:
 
     @staticmethod
     def _display_environment_results(environments_results):
-        print(
-            f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
+        print(f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
 
+        results: list[tuple[str, int, int, int, int, int]] = []
         for environment_results in environments_results:
             environment_name = environment_results["environment"]
             applications_count = len(environment_results["applications"])
             cloud_flows_count = len(environment_results["cloud_flows"])
-            desktop_flows_count = environment_results["desktop_flows"]
-            model_driven_apps_count = environment_results["model_driven_apps"]
+            desktop_flows_count = len(environment_results["desktop_flows"])
+            model_driven_apps_count = len(environment_results["model_driven_apps"])
             total = applications_count + cloud_flows_count + desktop_flows_count + model_driven_apps_count
-            print(
-                f'{environment_name:<44} {applications_count:<15} {cloud_flows_count:<15} {desktop_flows_count:<15} {model_driven_apps_count:<18} {total:<15}')
+            results.append((environment_name, applications_count, cloud_flows_count, desktop_flows_count, model_driven_apps_count, total))
+
+        # sort by total
+        results = sorted(results, key=lambda x: x[5], reverse=True)
+
+        # display results
+        for result in results:
+            print(f'{result[0]:<44} {result[1]:<15} {result[2]:<15} {result[3]:<15} {result[4]:<18} {result[5]:<15}')
 
         print()
 
@@ -89,19 +96,19 @@ class SecurityAssessmentTool:
 
     @staticmethod
     def _display_users(users_list):
-        print(f'{"Total Users":<18}')
-        print(f'{len(users_list):<18}')
+        print(f'{"Total Users":<22}')
+        print(f'{len(users_list):<22}')
 
-        print(f'{"Internal Users":<18} {"Guest Users":<18}')
+        print(f'{"Internal Users":<22} {"Guest Users":<22}')
         guest_users = [user for user in users_list if user.domainname and user.domainname.find('#EXT#') != -1]
         internal_users = [user for user in users_list if user not in guest_users]
-        print(f'{len(internal_users):<18} {len(guest_users):<18}')
+        print(f'{len(internal_users):<22} {len(guest_users):<22}')
 
-        print(f'{"Azure state 0":<18} {"Azure state 1":<18} {"Azure state 2":<18}')
+        print(f'{"Active (0)":<22} {"AD soft delete (1)":<22} {"AD hard delete (2)":<22}')
         azure_state_0 = [user for user in users_list if user.azurestate == 0]
         azure_state_1 = [user for user in users_list if user.azurestate == 1]
         azure_state_2 = [user for user in users_list if user.azurestate == 2]
-        print(f'{len(azure_state_0):<18} {len(azure_state_1):<18} {len(azure_state_2):<18}')
+        print(f'{len(azure_state_0):<22} {len(azure_state_1):<22} {len(azure_state_2):<22}')
         print()
 
     @staticmethod
@@ -110,7 +117,7 @@ class SecurityAssessmentTool:
         for connector_with_connections in all_connector_connections[:3]:
             connector = connector_with_connections.connector
             connections_count = len(connector_with_connections.connections)
-            print(f'{connector.name:<22} {connector.properties.metadata.source:<22} {connections_count:<22}')
+            print(f'{connector.name:<22} {connector.properties.publisher:<22} {connections_count:<22}')
 
         print()
 
