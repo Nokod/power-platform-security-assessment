@@ -92,12 +92,6 @@ class User(BaseModel):
     fullname: str
     azureactivedirectoryobjectid: str
 
-    def __eq__(self, other):
-        return self.azureactivedirectoryobjectid == other.azureactivedirectoryobjectid
-
-    def __hash__(self):
-        return hash(self.azureactivedirectoryobjectid)
-
 
 class ConnectorMetadata(BaseModel):
     source: str
@@ -112,18 +106,12 @@ class Connector(BaseModel):
     name: str
     properties: ConnectorProperties
 
-    def __eq__(self, other):
-        return self.name == other.name
-
-    def __hash__(self):
-        return hash(self.name)
-
-
-class ConnectionExtended(BaseModel):
-    name: str
-    connector: Connector
-
 
 class Connection(BaseModel):
     name: str
     id: str
+
+
+class ConnectorWithConnections(BaseModel):
+    connector: Connector
+    connections: list[Connection]
