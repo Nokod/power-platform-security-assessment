@@ -49,9 +49,8 @@ class AppDeveloperTextualReport:
 
         return textual_report
 
-
-def generate_textual_report(self, developers: Developers) -> str:
-    textual_report = ''
-    textual_report += self._generate_developer_textual_report(developers.guest_developers, 'guest') + '\n'
-    textual_report += self._generate_developer_textual_report(developers.inactive_developers, 'deleted')
-    return textual_report
+    def generate_textual_report(self, developers: Developers) -> str:
+        textual_report = ''
+        textual_report += self._generate_developer_textual_report(developers.guest_developers, 'guest') + '\n'
+        textual_report += self._generate_developer_textual_report(developers.inactive_developers, 'deleted')
+        return textual_report
