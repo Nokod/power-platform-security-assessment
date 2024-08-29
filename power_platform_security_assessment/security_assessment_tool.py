@@ -3,7 +3,9 @@ import concurrent.futures
 import msal
 from pydash import flatten_deep, values
 
-from power_platform_security_assessment.base_classes import Environment, User, ConnectorWithConnections, Application
+from power_platform_security_assessment.base_classes import (
+    Environment, User, ConnectorWithConnections, Application, ResourceData, CloudFlow, DesktopFlow, ModelDrivenApp
+)
 from power_platform_security_assessment.consts import Requests, ResponseKeys
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
@@ -44,22 +46,41 @@ class SecurityAssessmentTool:
     def _display_environment_results(environments_results):
         print(f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
 
-        results: list[tuple[str, int, int, int, int, int]] = []
+        results: list[tuple[str, ResourceData, ResourceData, ResourceData, ResourceData, int]] = []
         for environment_results in environments_results:
-            environment_name = environment_results["environment"]
-            applications_count = len(environment_results["applications"])
-            cloud_flows_count = len(environment_results["cloud_flows"])
-            desktop_flows_count = len(environment_results["desktop_flows"])
-            model_driven_apps_count = len(environment_results["model_driven_apps"])
-            total = applications_count + cloud_flows_count + desktop_flows_count + model_driven_apps_count
-            results.append((environment_name, applications_count, cloud_flows_count, desktop_flows_count, model_driven_apps_count, total))
+            environment_name: str = environment_results["environment"]
+
+            applications_result: ResourceData[Application] = environment_results["applications"]
+            cloud_flows_result: ResourceData[CloudFlow] = environment_results["cloud_flows"]
+            desktop_flows_result: ResourceData[DesktopFlow] = environment_results["desktop_flows"]
+            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results["model_driven_apps"]
+
+            results.append((
+                environment_name,
+                applications_result,
+                cloud_flows_result,
+                desktop_flows_result,
+                model_driven_apps_result,
+                applications_result.count + cloud_flows_result.count + desktop_flows_result.count + model_driven_apps_result.count
+            ))
 
         # sort by total
         results = sorted(results, key=lambda x: x[5], reverse=True)
 
         # display results
         for result in results:
-            print(f'{result[0]:<44} {result[1]:<15} {result[2]:<15} {result[3]:<15} {result[4]:<18} {result[5]:<15}')
+            total_has_plus = any(
+                not result[i].all_resources_fetched
+                for i in range(1, 5)
+            )
+            print(
+                f'{result[0]:<44} '
+                f'{str(result[1].count) + ("+" if not result[1].all_resources_fetched else ""):<15} '
+                f'{str(result[2].count) + ("+" if not result[2].all_resources_fetched else ""):<15} '
+                f'{str(result[3].count) + ("+" if not result[3].all_resources_fetched else ""):<15} '
+                f'{str(result[4].count) + ("+" if not result[4].all_resources_fetched else ""):<18} '
+                f'{str(result[5]) + ("+" if total_has_plus else ""):<15} '
+            )
 
         print()
 
@@ -67,7 +88,7 @@ class SecurityAssessmentTool:
     def _handle_environment_users(environments_results) -> list[User]:
         users_list: list[User] = []
         for environment_results in environments_results:
-            environment_users: list[User] = environment_results["users"]
+            environment_users: list[User] = environment_results["users"].value
             existing_user_ids = {u.azureactivedirectoryobjectid for u in users_list}
             users_list.extend(
                 user for user in environment_users
@@ -82,7 +103,7 @@ class SecurityAssessmentTool:
         connector_mapping: dict[str, ConnectorWithConnections] = {}
 
         for environment_results in environments_results:
-            for connector_with_connections in environment_results["connections"]:
+            for connector_with_connections in environment_results["connections"].value:
                 connector_name = connector_with_connections.connector.name
                 if connector_name in connector_mapping:
                     connector_mapping[connector_name].connections.extend(connector_with_connections.connections)
@@ -143,8 +164,8 @@ class SecurityAssessmentTool:
     def _handle_results(self, environments_results: list, environments: list[Environment]):
         all_users_list = self._handle_environment_users(environments_results)
         all_connector_connections = self._handle_connector_connections(environments_results)
-        all_applications = flatten_deep([env_results["applications"] for env_results in environments_results])
-        all_cloud_flows = flatten_deep([env_results["cloud_flows"] for env_results in environments_results])
+        all_applications = flatten_deep([env_results["applications"].value for env_results in environments_results])
+        all_cloud_flows = flatten_deep([env_results["cloud_flows"].value for env_results in environments_results])
 
         self._display_environment_results(environments_results)
         self._display_users(all_users_list)

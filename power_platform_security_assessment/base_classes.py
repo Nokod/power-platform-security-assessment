@@ -1,6 +1,8 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TypeVar, Generic
 
 from pydantic import BaseModel
+
+T = TypeVar("T")
 
 
 class LastActivityTimes(BaseModel):
@@ -145,3 +147,9 @@ class Connection(BaseModel):
 class ConnectorWithConnections(BaseModel):
     connector: Connector
     connections: list[Connection]
+
+
+class ResourceData(BaseModel, Generic[T]):
+    value: list[T] = []
+    count: int = 0
+    all_resources_fetched: bool = True

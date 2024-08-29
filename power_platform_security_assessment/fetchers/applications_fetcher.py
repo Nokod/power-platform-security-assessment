@@ -44,8 +44,9 @@ class ApplicationsFetcher(BaseResourceFetcher):
         while next_page_url:
             applications, next_page_url = self._fetch_single_page_apps(token=token, url=next_page_url)
             all_apps.extend(applications)
+            self._resource_count += len(applications)
 
         return all_apps
 
-    def fetch_applications(self) -> list[Application]:
+    def _do_fetch_resource_data(self) -> list[Application]:
         return self._fetch_canvas_apps()

@@ -34,8 +34,9 @@ class ModelDrivenAppsFetcher(BaseResourceFetcher):
         while next_page_url:
             model_driven_apps, next_page_url = self._fetch_single_page_model_driven_apps(token=token, url=next_page_url)
             all_model_driven_apps.extend(model_driven_apps)
+            self._resource_count += len(model_driven_apps)
 
         return all_model_driven_apps
 
-    def fetch_model_driven_apps(self) -> list[ModelDrivenApp]:
+    def _do_fetch_resource_data(self) -> list[ModelDrivenApp]:
         return self._fetch_model_driven_apps()

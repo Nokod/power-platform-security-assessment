@@ -34,8 +34,9 @@ class CloudFlowsFetcher(BaseResourceFetcher):
         while next_page_url:
             cloud_flows, next_page_url = self._fetch_single_page_cloud_flows(token=token, url=next_page_url)
             all_cloud_flows.extend(cloud_flows)
+            self._resource_count += len(cloud_flows)
 
         return all_cloud_flows
 
-    def fetch_cloud_flows(self) -> list[CloudFlow]:
+    def _do_fetch_resource_data(self) -> list[CloudFlow]:
         return self._fetch_cloud_flows()
