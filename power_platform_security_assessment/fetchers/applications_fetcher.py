@@ -18,6 +18,7 @@ class ApplicationsFetcher(BaseResourceFetcher):
                 "name,logicalName,properties.displayName,properties.bypassConsent,properties.owner.id,properties.createdBy.id"
                 ",properties.executionRestrictions.dataLossPreventionEvaluationResult.violations"
                 ",properties.executionRestrictions.appQuarantineState.quarantineStatus"
+                ",properties.embeddedApp.type"
             ),
             "api-version": "1",
         }

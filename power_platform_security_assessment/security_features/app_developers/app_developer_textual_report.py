@@ -11,19 +11,19 @@ from power_platform_security_assessment.security_features.common import (
 
 class AppDeveloperTextualReport:
     def __init__(self, environments: list[Environment]):
-        self.environments = environments
+        self._environments = environments
 
     def _get_environment_names(self, apps: list[Union[Application, CloudFlow]]) -> list[str]:
         environment_ids = {extract_environment_id(app.id) for app in apps}
         return [
-            find(self.environments, lambda env: env.name.lower() == env_id.lower()).properties.displayName
+            find(self._environments, lambda env: env.name.lower() == env_id.lower()).properties.displayName
             for env_id in environment_ids
         ]
 
     def _generate_env_text(self, resources: list, resource_type: str):
         apps_envs = self._get_environment_names(flatten(resources))
         envs_text = f'{", ".join(apps_envs)} environment{"" if len(apps_envs) == 1 else "s"}'
-        return f'{len(resources)} {resource_type} in {envs_text}'
+        return f'{len(resources)} {resource_type} in {envs_text}.'
 
     def _generate_developer_textual_report(self, user_resources: list[UserResources], developer_type: str) -> str:
         users_count = len(user_resources)

@@ -3,11 +3,12 @@ import concurrent.futures
 import msal
 from pydash import flatten_deep, values
 
-from power_platform_security_assessment.base_classes import Environment, User, ConnectorWithConnections
+from power_platform_security_assessment.base_classes import Environment, User, ConnectorWithConnections, Application
 from power_platform_security_assessment.consts import Requests, ResponseKeys
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
 from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
+from power_platform_security_assessment.security_features.bypass_consent.bypass_consent_analyzer import BypassConsentAnalyzer
 from power_platform_security_assessment.security_features.connectors.connectors_analyzer import ConnectorsAnalyzer
 from power_platform_security_assessment.token_manager import TokenManager
 
@@ -133,6 +134,12 @@ class SecurityAssessmentTool:
         result = connectors_analyzer.analyze()
         print(result.textual_report)
 
+    @staticmethod
+    def _display_bypass_consent(all_applications: list[Application]):
+        bypass_consent_analyzer = BypassConsentAnalyzer(all_applications)
+        bypass_consent_result = bypass_consent_analyzer.analyze()
+        print(bypass_consent_result.textual_report)
+
     def _handle_results(self, environments_results: list, environments: list[Environment]):
         all_users_list = self._handle_environment_users(environments_results)
         all_connector_connections = self._handle_connector_connections(environments_results)
@@ -145,6 +152,7 @@ class SecurityAssessmentTool:
 
         self._display_app_developers(all_applications, all_cloud_flows, all_users_list, environments)
         self._display_connector_issues(all_connector_connections)
+        self._display_bypass_consent(all_applications)
 
     def run_security_assessment(self):
         self._create_token()

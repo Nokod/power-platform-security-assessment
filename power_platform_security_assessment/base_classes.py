@@ -57,6 +57,10 @@ class AppExecutionRestrictions(BaseModel):
     appQuarantineState: Optional[AppQuarantineState] = None
 
 
+class EmbeddedApp(BaseModel):
+    type: str
+
+
 class ApplicationProperties(BaseModel):
     appVersion: str
     createdTime: str
@@ -68,6 +72,7 @@ class ApplicationProperties(BaseModel):
     owner: ApplicationUser
     createdBy: ApplicationUser
     executionRestrictions: AppExecutionRestrictions
+    embeddedApp: Optional[EmbeddedApp] = None
 
 
 class Application(BaseModel):
