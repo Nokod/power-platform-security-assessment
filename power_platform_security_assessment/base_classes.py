@@ -44,6 +44,19 @@ class ApplicationUser(BaseModel):
     id: str
 
 
+class DataLossPreventionEvaluationResult(BaseModel):
+    violations: list
+
+
+class AppQuarantineState(BaseModel):
+    quarantineStatus: str
+
+
+class AppExecutionRestrictions(BaseModel):
+    dataLossPreventionEvaluationResult: DataLossPreventionEvaluationResult
+    appQuarantineState: Optional[AppQuarantineState] = None
+
+
 class ApplicationProperties(BaseModel):
     appVersion: str
     createdTime: str
@@ -54,6 +67,7 @@ class ApplicationProperties(BaseModel):
     bypassConsent: bool
     owner: ApplicationUser
     createdBy: ApplicationUser
+    executionRestrictions: AppExecutionRestrictions
 
 
 class Application(BaseModel):
@@ -85,6 +99,16 @@ class CloudFlow(BaseModel):
     properties: CloudFlowProperties
 
 
+class DesktopFlow(BaseModel):
+    workflowidunique: str
+    statecode: int
+
+
+class ModelDrivenApp(BaseModel):
+    appmoduleidunique: str
+    statecode: int
+
+
 class User(BaseModel):
     domainname: str
     isdisabled: bool
@@ -99,6 +123,7 @@ class ConnectorMetadata(BaseModel):
 
 class ConnectorProperties(BaseModel):
     displayName: str
+    publisher: str
     metadata: ConnectorMetadata
 
 

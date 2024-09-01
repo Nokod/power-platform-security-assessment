@@ -1,6 +1,8 @@
 import concurrent.futures
 
-from power_platform_security_assessment.base_classes import Environment, User, Application, CloudFlow, ConnectorWithConnections
+from power_platform_security_assessment.base_classes import (
+    Environment, User, Application, CloudFlow, ConnectorWithConnections, DesktopFlow, ModelDrivenApp
+)
 from power_platform_security_assessment.fetchers.applications_fetcher import ApplicationsFetcher
 from power_platform_security_assessment.fetchers.cloud_flows_fetcher import CloudFlowsFetcher
 from power_platform_security_assessment.fetchers.connections_fetcher import ConnectionsFetcher
@@ -32,9 +34,9 @@ class EnvironmentScanner:
 
         return cloud_flow_fetcher.fetch_cloud_flows()
 
-    def _fetch_desktop_flows(self) -> int:
+    def _fetch_desktop_flows(self) -> list[DesktopFlow]:
         if not self._environment.properties.linkedEnvironmentMetadata:
-            return 0
+            return []
 
         desktop_flow_fetcher = DesktopFlowsFetcher(
             instance_api_url=self._environment.properties.linkedEnvironmentMetadata.instanceApiUrl,
@@ -42,11 +44,11 @@ class EnvironmentScanner:
             token_manager=self._token_manager,
         )
 
-        return desktop_flow_fetcher.fetch_desktop_flows_count()
+        return desktop_flow_fetcher.fetch_desktop_flows()
 
-    def _fetch_model_driven_apps(self) -> int:
+    def _fetch_model_driven_apps(self) -> list[ModelDrivenApp]:
         if not self._environment.properties.linkedEnvironmentMetadata:
-            return 0
+            return []
 
         model_driven_apps_fetcher = ModelDrivenAppsFetcher(
             instance_api_url=self._environment.properties.linkedEnvironmentMetadata.instanceApiUrl,
@@ -54,7 +56,7 @@ class EnvironmentScanner:
             token_manager=self._token_manager,
         )
 
-        return model_driven_apps_fetcher.fetch_model_driven_apps_count()
+        return model_driven_apps_fetcher.fetch_model_driven_apps()
 
     def _fetch_connections(self) -> list[ConnectorWithConnections]:
         connections_fetcher = ConnectionsFetcher(
@@ -95,6 +97,6 @@ class EnvironmentScanner:
                 except Exception as e:
                     # todo: handle exceptions properly
                     results[data_type] = None
-                    print(f"An error occurred while fetching {data_type}: {e}")
+                    print(f"An error occurred while fetching {data_type} for environment {self._environment.properties.displayName}. {e}")
 
             return results

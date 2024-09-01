@@ -18,8 +18,8 @@ class AppDeveloperAnalyzer:
             key_by(users, lambda user: user.azureactivedirectoryobjectid),
             lambda user: UserResources(
                 user=user,
-                apps={},
-                flows={}
+                apps=[],
+                flows=[],
             )
         )
 
@@ -27,15 +27,13 @@ class AppDeveloperAnalyzer:
         for app in self._apps:
             app_owner = find(users, lambda user: app.properties.owner.id == user.azureactivedirectoryobjectid)
             if app_owner:
-                identifier = app.logicalName or app.name
-                user_map[app_owner.azureactivedirectoryobjectid].apps.setdefault(identifier, []).append(app)
+                user_map[app_owner.azureactivedirectoryobjectid].apps.append(app)
 
         # Map flows to their creators
         for flow in self._cloud_flows:
             flow_creator = find(users, lambda user: flow.properties.creator.userId == user.azureactivedirectoryobjectid)
             if flow_creator:
-                identifier = flow.properties.workflowEntityId or flow.name
-                user_map[flow_creator.azureactivedirectoryobjectid].flows.setdefault(identifier, []).append(flow)
+                user_map[flow_creator.azureactivedirectoryobjectid].flows.append(flow)
 
         # Convert the map to a list and sort it by the number of apps and flows
         return sort_by(

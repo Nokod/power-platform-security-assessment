@@ -14,7 +14,11 @@ class ApplicationsFetcher(BaseResourceFetcher):
         environment_id_with_dot = f'{self._env_id[:-2]}.{self._env_id[-2:]}'
         without_dash = environment_id_with_dot.replace('-', '')
         params = {
-            "$select": "name,logicalName,properties.displayName,properties.bypassConsent,properties.owner.id,properties.createdBy.id",
+            "$select": (
+                "name,logicalName,properties.displayName,properties.bypassConsent,properties.owner.id,properties.createdBy.id"
+                ",properties.executionRestrictions.dataLossPreventionEvaluationResult.violations"
+                ",properties.executionRestrictions.appQuarantineState.quarantineStatus"
+            ),
             "api-version": "1",
         }
         return f'https://{without_dash}.environment.api.powerplatform.com/powerapps/apps?{urlencode(params)}'
