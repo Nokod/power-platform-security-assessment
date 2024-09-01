@@ -3,6 +3,7 @@ import concurrent.futures
 from power_platform_security_assessment.base_classes import (
     Environment, User, Application, CloudFlow, ConnectorWithConnections, DesktopFlow, ModelDrivenApp, ResourceData
 )
+from power_platform_security_assessment.consts import ComponentType
 from power_platform_security_assessment.fetchers.applications_fetcher import ApplicationsFetcher
 from power_platform_security_assessment.fetchers.cloud_flows_fetcher import CloudFlowsFetcher
 from power_platform_security_assessment.fetchers.connections_fetcher import ConnectionsFetcher
@@ -80,18 +81,18 @@ class EnvironmentScanner:
 
     def scan_environment(self):
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            results = {'environment': self._environment, 'error': None}
+            results = {ComponentType.ENVIRONMENT: self._environment, 'error': None}
             futures = {
-                executor.submit(self._fetch_applications): 'applications',
-                executor.submit(self._fetch_cloud_flows): 'cloud_flows',
-                executor.submit(self._fetch_desktop_flows): 'desktop_flows',
-                executor.submit(self._fetch_model_driven_apps): 'model_driven_apps',
-                executor.submit(self._fetch_connections): 'connections',
-                executor.submit(self._fetch_users): 'users',
+                executor.submit(self._fetch_applications): ComponentType.APPLICATIONS,
+                executor.submit(self._fetch_cloud_flows): ComponentType.CLOUD_FLOWS,
+                executor.submit(self._fetch_desktop_flows): ComponentType.DESKTOP_FLOWS,
+                executor.submit(self._fetch_model_driven_apps): ComponentType.MODEL_DRIVEN_APPS,
+                executor.submit(self._fetch_connections): ComponentType.CONNECTIONS,
+                executor.submit(self._fetch_users): ComponentType.USERS,
             }
 
             for future in concurrent.futures.as_completed(futures):
-                data_type = futures[future]
+                data_type: ComponentType = futures[future]
                 try:
                     results[data_type] = future.result()
                 except Exception as e:

@@ -6,7 +6,7 @@ from pydash import flatten_deep, values
 from power_platform_security_assessment.base_classes import (
     Environment, User, ConnectorWithConnections, Application, ResourceData, CloudFlow, DesktopFlow, ModelDrivenApp
 )
-from power_platform_security_assessment.consts import Requests, ResponseKeys
+from power_platform_security_assessment.consts import Requests, ResponseKeys, ComponentType
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
 from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
@@ -48,12 +48,12 @@ class SecurityAssessmentTool:
 
         results: list[tuple[str, ResourceData, ResourceData, ResourceData, ResourceData, int]] = []
         for environment_results in environments_results:
-            environment: Environment = environment_results["environment"]
+            environment: Environment = environment_results[ComponentType.ENVIRONMENT]
 
-            applications_result: ResourceData[Application] = environment_results["applications"]
-            cloud_flows_result: ResourceData[CloudFlow] = environment_results["cloud_flows"]
-            desktop_flows_result: ResourceData[DesktopFlow] = environment_results["desktop_flows"]
-            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results["model_driven_apps"]
+            applications_result: ResourceData[Application] = environment_results[ComponentType.APPLICATIONS]
+            cloud_flows_result: ResourceData[CloudFlow] = environment_results[ComponentType.CLOUD_FLOWS]
+            desktop_flows_result: ResourceData[DesktopFlow] = environment_results[ComponentType.DESKTOP_FLOWS]
+            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results[ComponentType.MODEL_DRIVEN_APPS]
 
             results.append((
                 environment.properties.displayName,
@@ -85,7 +85,7 @@ class SecurityAssessmentTool:
         print()
         print('Environments failed to scan - Insufficient user permissions:')
         for failed_environment in failed_environments:
-            print(f'{failed_environment["environment"].properties.displayName}')
+            print(f'{failed_environment[ComponentType.ENVIRONMENT].properties.displayName}')
 
         print()
 
@@ -93,7 +93,7 @@ class SecurityAssessmentTool:
     def _handle_environment_users(environments_results) -> list[User]:
         users_list: list[User] = []
         for environment_results in environments_results:
-            environment_users: list[User] = environment_results["users"].value
+            environment_users: list[User] = environment_results[ComponentType.USERS].value
             existing_user_ids = {u.azureactivedirectoryobjectid for u in users_list}
             users_list.extend(
                 user for user in environment_users
@@ -108,7 +108,7 @@ class SecurityAssessmentTool:
         connector_mapping: dict[str, ConnectorWithConnections] = {}
 
         for environment_results in environments_results:
-            for connector_with_connections in environment_results["connections"].value:
+            for connector_with_connections in environment_results[ComponentType.CONNECTIONS].value:
                 connector_name = connector_with_connections.connector.name
                 if connector_name in connector_mapping:
                     connector_mapping[connector_name].connections.extend(connector_with_connections.connections)
@@ -169,8 +169,8 @@ class SecurityAssessmentTool:
     def _handle_results(self, environments_results: list, failed_environments: list, environments: list[Environment]):
         all_users_list = self._handle_environment_users(environments_results)
         all_connector_connections = self._handle_connector_connections(environments_results)
-        all_applications = flatten_deep([env_results["applications"].value for env_results in environments_results])
-        all_cloud_flows = flatten_deep([env_results["cloud_flows"].value for env_results in environments_results])
+        all_applications = flatten_deep([env_results[ComponentType.APPLICATIONS].value for env_results in environments_results])
+        all_cloud_flows = flatten_deep([env_results[ComponentType.CLOUD_FLOWS].value for env_results in environments_results])
 
         self._display_environment_results(environments_results, failed_environments)
         self._display_users(all_users_list)

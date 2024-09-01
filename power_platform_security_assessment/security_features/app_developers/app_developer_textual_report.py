@@ -23,7 +23,7 @@ class AppDeveloperTextualReport:
     def _generate_env_text(self, resources: list, resource_type: str):
         apps_envs = self._get_environment_names(flatten(resources))
         envs_text = f'{", ".join(apps_envs)} environment{"" if len(apps_envs) == 1 else "s"}'
-        return f'{len(resources)} {resource_type} in {envs_text}.'
+        return f'{len(resources)} {resource_type} in the {envs_text}.'
 
     def _generate_developer_textual_report(self, user_resources: list[UserResources], developer_type: str) -> str:
         users_count = len(user_resources)
