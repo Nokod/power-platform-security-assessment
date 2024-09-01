@@ -80,7 +80,7 @@ class EnvironmentScanner:
 
     def scan_environment(self):
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            results = {'environment': self._environment.properties.displayName}
+            results = {'environment': self._environment, 'error': None}
             futures = {
                 executor.submit(self._fetch_applications): 'applications',
                 executor.submit(self._fetch_cloud_flows): 'cloud_flows',
@@ -95,8 +95,7 @@ class EnvironmentScanner:
                 try:
                     results[data_type] = future.result()
                 except Exception as e:
-                    # todo: handle exceptions properly
                     results[data_type] = None
-                    print(f"An error occurred while fetching {data_type} for environment {self._environment.properties.displayName}. {e}")
+                    results['error'] = e
 
             return results

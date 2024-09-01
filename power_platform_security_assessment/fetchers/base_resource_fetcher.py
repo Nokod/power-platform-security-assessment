@@ -45,11 +45,9 @@ class BaseResourceFetcher:
         switcher = {
             200: res.json(),
             404: {},
-            403: {}, #todo: check permissions
         }
 
         if res.status_code not in switcher:
-            print(f"Error: {res.status_code} while fetching {url}, response: {res.text}")
             res.raise_for_status()
 
         return switcher.get(res.status_code)

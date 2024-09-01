@@ -43,12 +43,12 @@ class SecurityAssessmentTool:
         return env_scanner.scan_environment()
 
     @staticmethod
-    def _display_environment_results(environments_results):
+    def _display_environment_results(environments_results, failed_environments):
         print(f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
 
         results: list[tuple[str, ResourceData, ResourceData, ResourceData, ResourceData, int]] = []
         for environment_results in environments_results:
-            environment_name: str = environment_results["environment"]
+            environment: Environment = environment_results["environment"]
 
             applications_result: ResourceData[Application] = environment_results["applications"]
             cloud_flows_result: ResourceData[CloudFlow] = environment_results["cloud_flows"]
@@ -56,7 +56,7 @@ class SecurityAssessmentTool:
             model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results["model_driven_apps"]
 
             results.append((
-                environment_name,
+                environment.properties.displayName,
                 applications_result,
                 cloud_flows_result,
                 desktop_flows_result,
@@ -81,6 +81,11 @@ class SecurityAssessmentTool:
                 f'{str(result[4].count) + ("+" if not result[4].all_resources_fetched else ""):<18} '
                 f'{str(result[5]) + ("+" if total_has_plus else ""):<15} '
             )
+
+        print()
+        print('Environments failed to scan - Insufficient user permissions:')
+        for failed_environment in failed_environments:
+            print(f'{failed_environment["environment"].properties.displayName}')
 
         print()
 
@@ -161,13 +166,13 @@ class SecurityAssessmentTool:
         bypass_consent_result = bypass_consent_analyzer.analyze()
         print(bypass_consent_result.textual_report)
 
-    def _handle_results(self, environments_results: list, environments: list[Environment]):
+    def _handle_results(self, environments_results: list, failed_environments: list, environments: list[Environment]):
         all_users_list = self._handle_environment_users(environments_results)
         all_connector_connections = self._handle_connector_connections(environments_results)
         all_applications = flatten_deep([env_results["applications"].value for env_results in environments_results])
         all_cloud_flows = flatten_deep([env_results["cloud_flows"].value for env_results in environments_results])
 
-        self._display_environment_results(environments_results)
+        self._display_environment_results(environments_results, failed_environments)
         self._display_users(all_users_list)
         self._display_connections(all_connector_connections)
 
@@ -180,16 +185,21 @@ class SecurityAssessmentTool:
         environments = EnvironmentsFetcher().fetch_environments(self._access_token)
         token_manager = TokenManager(self._client_id, self._refresh_token)
         environments_results = []
+        failed_environments = []
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in environments]
             for future in concurrent.futures.as_completed(futures):
                 try:
-                    environments_results.append(future.result())
+                    result = future.result()
+                    if not result['error']:
+                        environments_results.append(result)
+                    else:
+                        failed_environments.append(result)
                 except Exception as e:
                     print(f"An error occurred during environment scanning: {e}")
 
-        self._handle_results(environments_results, environments)
+        self._handle_results(environments_results, failed_environments, environments)
 
 
 def main():
