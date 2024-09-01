@@ -13,6 +13,7 @@ class UsersFetcher(BaseResourceFetcher):
     def _get_request_url(self):
         params = {
             "$select": "fullname,domainname,isdisabled,azurestate,azureactivedirectoryobjectid",
+            "$filter": "azureactivedirectoryobjectid ne null",
         }
         return f'{self._instance_api_url}/api/data/v9.2/systemusers?{urlencode(params)}'
 

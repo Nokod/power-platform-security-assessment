@@ -1,15 +1,14 @@
 from urllib.parse import urlencode
 
-from pydantic import BaseModel
+from pydash import map_, filter_
 
-from power_platform_security_assessment.base_classes import Connector, ConnectionExtended, Connection
+from power_platform_security_assessment.base_classes import Connector, Connection, ConnectorWithConnections
 from power_platform_security_assessment.consts import Requests
 from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
 
 
-class ConnectionWithConnectorName(BaseModel):
-    name: str
+class _ConnectionWithConnectorName(Connection):
     connector_name: str
 
 
@@ -59,14 +58,15 @@ class ConnectionsFetcher(BaseResourceFetcher):
             if connector.name in connector_names and connector.name not in self._IGNORED_CONNECTORS
         ]
 
-    def _fetch_single_page_connections(self, token: str, url: str) -> tuple[list[ConnectionWithConnectorName], str]:
+    def _fetch_single_page_connections(self, token: str, url: str) -> tuple[list[_ConnectionWithConnectorName], str]:
         response_data = self._fetch_single_page(url, headers={
             'Authorization': f'Bearer {token}',
         })
 
         connections = [Connection(**connection) for connection in response_data.get('value', [])]
         connection_with_connector_name = [
-            ConnectionWithConnectorName(
+            _ConnectionWithConnectorName(
+                id=connection.id,
                 name=connection.name,
                 connector_name=connector_name,
             )
@@ -77,9 +77,9 @@ class ConnectionsFetcher(BaseResourceFetcher):
 
         return connection_with_connector_name, next_page
 
-    def _fetch_all_connections(self, token: str) -> list[ConnectionWithConnectorName]:
+    def _fetch_all_connections(self, token: str) -> list[_ConnectionWithConnectorName]:
         next_page_url = self._get_all_connections_url()
-        connections: list[ConnectionWithConnectorName] = []
+        connections: list[_ConnectionWithConnectorName] = []
 
         while next_page_url:
             connections_page, next_page_url = self._fetch_single_page_connections(
@@ -90,7 +90,7 @@ class ConnectionsFetcher(BaseResourceFetcher):
 
         return connections
 
-    def fetch_connections(self) -> list[ConnectionExtended]:
+    def fetch_connections(self) -> list[ConnectorWithConnections]:
         token = self._token_manager.fetch_access_token(Requests.ENVIRONMENTS_SCOPE)
         connections = self._fetch_all_connections(token)
         used_connector_names = list({connection.connector_name for connection in connections})
@@ -99,10 +99,10 @@ class ConnectionsFetcher(BaseResourceFetcher):
             connector_names=used_connector_names
         )
 
-        return [
-            ConnectionExtended(
-                name=connection.name,
-                connector=next((connector for connector in connectors if connector.name == connection.connector_name), None),
-            )
-            for connection in connections
-        ]
+        connectors_with_connections = map_(connectors, lambda connector: ConnectorWithConnections(
+            connector=connector,
+            connections=filter_(connections, lambda connection: connection.connector_name == connector.name)
+        ))
+
+        # Return connectors sorted by the number of connections
+        return sorted(connectors_with_connections, key=lambda x: len(x.connections), reverse=True)

@@ -59,6 +59,7 @@ class ApplicationProperties(BaseModel):
 class Application(BaseModel):
     id: str
     name: str
+    logicalName: Optional[str] = None
     type: str
     appType: str
     properties: ApplicationProperties
@@ -73,6 +74,7 @@ class CloudFlowProperties(BaseModel):
     createdTime: str
     lastModifiedTime: str
     state: str
+    workflowEntityId: Optional[str] = None
     creator: CloudFlowUser
 
 
@@ -88,7 +90,7 @@ class User(BaseModel):
     isdisabled: bool
     azurestate: int
     fullname: str
-    azureactivedirectoryobjectid: Optional[str] = None
+    azureactivedirectoryobjectid: str
 
 
 class ConnectorMetadata(BaseModel):
@@ -104,15 +106,12 @@ class Connector(BaseModel):
     name: str
     properties: ConnectorProperties
 
-    def __hash__(self):
-        return hash(self.name)
-
-
-class ConnectionExtended(BaseModel):
-    name: str
-    connector: Connector
-
 
 class Connection(BaseModel):
     name: str
     id: str
+
+
+class ConnectorWithConnections(BaseModel):
+    connector: Connector
+    connections: list[Connection]

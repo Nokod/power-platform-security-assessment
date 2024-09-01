@@ -1,6 +1,6 @@
 import concurrent.futures
 
-from power_platform_security_assessment.base_classes import Environment, User, Application, CloudFlow
+from power_platform_security_assessment.base_classes import Environment, User, Application, CloudFlow, ConnectorWithConnections
 from power_platform_security_assessment.fetchers.applications_fetcher import ApplicationsFetcher
 from power_platform_security_assessment.fetchers.cloud_flows_fetcher import CloudFlowsFetcher
 from power_platform_security_assessment.fetchers.connections_fetcher import ConnectionsFetcher
@@ -56,7 +56,7 @@ class EnvironmentScanner:
 
         return model_driven_apps_fetcher.fetch_model_driven_apps_count()
 
-    def _fetch_connections(self):
+    def _fetch_connections(self) -> list[ConnectorWithConnections]:
         connections_fetcher = ConnectionsFetcher(
             env_id=self._env_id,
             token_manager=self._token_manager,

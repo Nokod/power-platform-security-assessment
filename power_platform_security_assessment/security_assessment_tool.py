@@ -1,11 +1,13 @@
 import concurrent.futures
 
 import msal
+from pydash import flatten_deep, values
 
-from power_platform_security_assessment.base_classes import Environment, User, Connector, ConnectionExtended
+from power_platform_security_assessment.base_classes import Environment, User, ConnectorWithConnections
 from power_platform_security_assessment.consts import Requests, ResponseKeys
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
+from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
 from power_platform_security_assessment.token_manager import TokenManager
 
 
@@ -67,6 +69,25 @@ class SecurityAssessmentTool:
         return users_list
 
     @staticmethod
+    def _handle_connector_connections(environments_results):
+        # Dictionary to map connector names to their respective ConnectorWithConnections objects
+        connector_mapping: dict[str, ConnectorWithConnections] = {}
+
+        for environment_results in environments_results:
+            for connector_with_connections in environment_results["connections"]:
+                connector_name = connector_with_connections.connector.name
+                if connector_name in connector_mapping:
+                    connector_mapping[connector_name].connections.extend(connector_with_connections.connections)
+                else:
+                    connector_mapping[connector_name] = connector_with_connections
+
+        # Convert the dictionary back to a list
+        all_connector_connections = values(connector_mapping)
+
+        # Return connectors sorted by the number of connections
+        return sorted(all_connector_connections, key=lambda x: len(x.connections), reverse=True)
+
+    @staticmethod
     def _display_users(users_list):
         print(f'{"Total Users":<18}')
         print(f'{len(users_list):<18}')
@@ -84,25 +105,32 @@ class SecurityAssessmentTool:
         print()
 
     @staticmethod
-    def _print_connections(environments_results):
-        connector_connections: dict[Connector, int] = {}
-        for environment_results in environments_results:
-            connections: list[ConnectionExtended] = environment_results["connections"]
-            for connection in connections:
-                connector_connections[connection.connector] = connector_connections.get(connection.connector, 0) + 1
-
-        sorted_connector_connections = sorted(connector_connections.items(), key=lambda x: x[1], reverse=True)
+    def _display_connections(all_connector_connections: list[ConnectorWithConnections]):
         print(f'{"Connector":<22} {"Publisher":<22} {"Number of Connections":<22}')
-        for connector, connections_count in sorted_connector_connections[:3]: # take top 3
-            print(
-                f'{connector.name:<22} {connector.properties.metadata.source:<22} {connections_count:<22}')
+        for connector_with_connections in all_connector_connections[:3]:
+            connector = connector_with_connections.connector
+            connections_count = len(connector_with_connections.connections)
+            print(f'{connector.name:<22} {connector.properties.metadata.source:<22} {connections_count:<22}')
+
         print()
 
-    def _handle_results(self, environments_results):
+    @staticmethod
+    def _display_app_developers(all_applications, all_cloud_flows, users_list, environments):
+        app_developer_analyzer = AppDeveloperAnalyzer(all_applications, all_cloud_flows, users_list, environments)
+        app_developers_result = app_developer_analyzer.analyze()
+        print(app_developers_result.textual_report)
+
+    def _handle_results(self, environments_results: list, environments: list[Environment]):
+        all_users_list = self._handle_environment_users(environments_results)
+        all_connector_connections = self._handle_connector_connections(environments_results)
+        all_applications = flatten_deep([env_results["applications"] for env_results in environments_results])
+        all_cloud_flows = flatten_deep([env_results["cloud_flows"] for env_results in environments_results])
+
         self._display_environment_results(environments_results)
-        users_list = self._handle_environment_users(environments_results)
-        self._display_users(users_list)
-        self._print_connections(environments_results)
+        self._display_users(all_users_list)
+        self._display_connections(all_connector_connections)
+
+        self._display_app_developers(all_applications, all_cloud_flows, all_users_list, environments)
 
     def run_security_assessment(self):
         self._create_token()
@@ -118,7 +146,7 @@ class SecurityAssessmentTool:
                 except Exception as e:
                     print(f"An error occurred during environment scanning: {e}")
 
-        self._handle_results(environments_results)
+        self._handle_results(environments_results, environments)
 
 
 def main():
