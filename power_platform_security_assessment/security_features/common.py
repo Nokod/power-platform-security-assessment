@@ -1,8 +1,8 @@
 import re
 
-from pydash import get
+from pydash import get, uniq
 
-from power_platform_security_assessment.base_classes import User, Application, CloudFlow
+from power_platform_security_assessment.base_classes import User, Application, CloudFlow, ConnectorWithConnections
 
 _ENV_ID_PATTERN = r"/environments/([^/]+)"
 
@@ -10,6 +10,14 @@ _ENV_ID_PATTERN = r"/environments/([^/]+)"
 def extract_environment_id(resource_id: str) -> str:
     match = re.search(_ENV_ID_PATTERN, resource_id)
     return match.group(1)
+
+
+def extract_environment_ids_from_connectors(connectors: list[ConnectorWithConnections]) -> list[str]:
+    return uniq(
+        extract_environment_id(connection.id)
+        for connector in connectors
+        for connection in connector.connections
+    )
 
 
 def extract_user_domain(user: User) -> str:

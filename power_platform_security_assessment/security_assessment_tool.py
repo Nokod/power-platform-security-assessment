@@ -127,6 +127,12 @@ class SecurityAssessmentTool:
         app_developers_result = app_developer_analyzer.analyze()
         print(app_developers_result.textual_report)
 
+    @staticmethod
+    def _display_connector_issues(all_connector_connections: list[ConnectorWithConnections]):
+        connectors_analyzer = ConnectorsAnalyzer(all_connector_connections)
+        result = connectors_analyzer.analyze()
+        print(result.textual_report)
+
     def _handle_results(self, environments_results: list, environments: list[Environment]):
         all_users_list = self._handle_environment_users(environments_results)
         all_connector_connections = self._handle_connector_connections(environments_results)
@@ -138,6 +144,7 @@ class SecurityAssessmentTool:
         self._display_connections(all_connector_connections)
 
         self._display_app_developers(all_applications, all_cloud_flows, all_users_list, environments)
+        self._display_connector_issues(all_connector_connections)
 
     def run_security_assessment(self):
         self._create_token()
