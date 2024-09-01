@@ -2,7 +2,9 @@ import re
 
 from pydash import get, uniq
 
-from power_platform_security_assessment.base_classes import User, Application, CloudFlow, ConnectorWithConnections
+from power_platform_security_assessment.base_classes import (
+    User, Application, CloudFlow, ConnectorWithConnections, ModelDrivenApp, DesktopFlow
+)
 
 _ENV_ID_PATTERN = r"/environments/([^/]+)"
 
@@ -31,3 +33,11 @@ def is_app_disabled(app: Application) -> bool:
 
 def is_flow_disabled(flow: CloudFlow) -> bool:
     return flow.properties.state in ['Stopped', 'Suspended']
+
+
+def is_model_driven_app_disabled(model_driven_app: ModelDrivenApp) -> bool:
+    return model_driven_app.statecode == 1
+
+
+def is_desktop_flow_disabled(desktop_flow: DesktopFlow) -> bool:
+    return desktop_flow.statecode == 1
