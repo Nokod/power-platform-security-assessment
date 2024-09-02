@@ -6,11 +6,14 @@ from pydash import flatten_deep, values
 from power_platform_security_assessment.base_classes import (
     Environment, User, ConnectorWithConnections, Application, ResourceData, CloudFlow, DesktopFlow, ModelDrivenApp
 )
-from power_platform_security_assessment.consts import Requests, ResponseKeys
+from power_platform_security_assessment.consts import Requests, ResponseKeys, ComponentType
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
 from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
 from power_platform_security_assessment.security_features.bypass_consent.bypass_consent_analyzer import BypassConsentAnalyzer
+from power_platform_security_assessment.security_features.common import (
+    get_application_owner_id, get_cloud_flow_owner_id, get_model_driven_app_owner_id, get_desktop_flow_owner_id
+)
 from power_platform_security_assessment.security_features.connectors.connectors_analyzer import ConnectorsAnalyzer
 from power_platform_security_assessment.token_manager import TokenManager
 
@@ -43,20 +46,20 @@ class SecurityAssessmentTool:
         return env_scanner.scan_environment()
 
     @staticmethod
-    def _display_environment_results(environments_results):
+    def _display_environment_results(environments_results, failed_environments):
         print(f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
 
         results: list[tuple[str, ResourceData, ResourceData, ResourceData, ResourceData, int]] = []
         for environment_results in environments_results:
-            environment_name: str = environment_results["environment"]
+            environment: Environment = environment_results[ComponentType.ENVIRONMENT]
 
-            applications_result: ResourceData[Application] = environment_results["applications"]
-            cloud_flows_result: ResourceData[CloudFlow] = environment_results["cloud_flows"]
-            desktop_flows_result: ResourceData[DesktopFlow] = environment_results["desktop_flows"]
-            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results["model_driven_apps"]
+            applications_result: ResourceData[Application] = environment_results[ComponentType.APPLICATIONS]
+            cloud_flows_result: ResourceData[CloudFlow] = environment_results[ComponentType.CLOUD_FLOWS]
+            desktop_flows_result: ResourceData[DesktopFlow] = environment_results[ComponentType.DESKTOP_FLOWS]
+            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results[ComponentType.MODEL_DRIVEN_APPS]
 
             results.append((
-                environment_name,
+                environment.properties.displayName,
                 applications_result,
                 cloud_flows_result,
                 desktop_flows_result,
@@ -83,12 +86,17 @@ class SecurityAssessmentTool:
             )
 
         print()
+        print('Environments failed to scan - Insufficient user permissions:')
+        for failed_environment in failed_environments:
+            print(f'{failed_environment[ComponentType.ENVIRONMENT].properties.displayName}')
+
+        print()
 
     @staticmethod
     def _handle_environment_users(environments_results) -> list[User]:
         users_list: list[User] = []
         for environment_results in environments_results:
-            environment_users: list[User] = environment_results["users"].value
+            environment_users: list[User] = environment_results[ComponentType.USERS].value
             existing_user_ids = {u.azureactivedirectoryobjectid for u in users_list}
             users_list.extend(
                 user for user in environment_users
@@ -98,12 +106,31 @@ class SecurityAssessmentTool:
         return users_list
 
     @staticmethod
+    def _get_environment_developers_count(environment_results) -> int:
+        component_mappings = {
+            ComponentType.APPLICATIONS: get_application_owner_id,
+            ComponentType.CLOUD_FLOWS: get_cloud_flow_owner_id,
+            ComponentType.DESKTOP_FLOWS: get_desktop_flow_owner_id,
+            ComponentType.MODEL_DRIVEN_APPS: get_model_driven_app_owner_id,
+        }
+
+        # Use a set to store unique developer IDs
+        developers = {
+            user_id
+            for component_type, get_owner_id in component_mappings.items()
+            for component in environment_results[component_type].value
+            if (user_id := get_owner_id(component))
+        }
+
+        return len(developers)
+
+    @staticmethod
     def _handle_connector_connections(environments_results):
         # Dictionary to map connector names to their respective ConnectorWithConnections objects
         connector_mapping: dict[str, ConnectorWithConnections] = {}
 
         for environment_results in environments_results:
-            for connector_with_connections in environment_results["connections"].value:
+            for connector_with_connections in environment_results[ComponentType.CONNECTIONS].value:
                 connector_name = connector_with_connections.connector.name
                 if connector_name in connector_mapping:
                     connector_mapping[connector_name].connections.extend(connector_with_connections.connections)
@@ -161,13 +188,13 @@ class SecurityAssessmentTool:
         bypass_consent_result = bypass_consent_analyzer.analyze()
         print(bypass_consent_result.textual_report)
 
-    def _handle_results(self, environments_results: list, environments: list[Environment]):
+    def _handle_results(self, environments_results: list, failed_environments: list, environments: list[Environment]):
         all_users_list = self._handle_environment_users(environments_results)
         all_connector_connections = self._handle_connector_connections(environments_results)
-        all_applications = flatten_deep([env_results["applications"].value for env_results in environments_results])
-        all_cloud_flows = flatten_deep([env_results["cloud_flows"].value for env_results in environments_results])
+        all_applications = flatten_deep([env_results[ComponentType.APPLICATIONS].value for env_results in environments_results])
+        all_cloud_flows = flatten_deep([env_results[ComponentType.CLOUD_FLOWS].value for env_results in environments_results])
 
-        self._display_environment_results(environments_results)
+        self._display_environment_results(environments_results, failed_environments)
         self._display_users(all_users_list)
         self._display_connections(all_connector_connections)
 
@@ -180,16 +207,21 @@ class SecurityAssessmentTool:
         environments = EnvironmentsFetcher().fetch_environments(self._access_token)
         token_manager = TokenManager(self._client_id, self._refresh_token)
         environments_results = []
+        failed_environments = []
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in environments]
             for future in concurrent.futures.as_completed(futures):
                 try:
-                    environments_results.append(future.result())
+                    result = future.result()
+                    if not result['error']:
+                        environments_results.append(result)
+                    else:
+                        failed_environments.append(result)
                 except Exception as e:
                     print(f"An error occurred during environment scanning: {e}")
 
-        self._handle_results(environments_results, environments)
+        self._handle_results(environments_results, failed_environments, environments)
 
 
 def main():

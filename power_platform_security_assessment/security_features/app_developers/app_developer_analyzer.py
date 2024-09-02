@@ -1,8 +1,9 @@
-from pydash import filter_, map_values, key_by, sort_by, find, values
+from pydash import map_values, key_by, sort_by, values
 
 from power_platform_security_assessment.base_classes import CloudFlow, Application, User, Environment
 from power_platform_security_assessment.security_features.app_developers.app_developer_textual_report import AppDeveloperTextualReport
 from power_platform_security_assessment.security_features.app_developers.model import UserResources, AppDevelopersReport, Developers
+from power_platform_security_assessment.security_features.common import get_application_owner_id, get_cloud_flow_owner_id
 
 
 class AppDeveloperAnalyzer:
@@ -25,13 +26,13 @@ class AppDeveloperAnalyzer:
 
         # Map apps to their owners
         for app in self._apps:
-            app_owner = find(users, lambda user: app.properties.owner.id == user.azureactivedirectoryobjectid)
+            app_owner = next((user for user in users if get_application_owner_id(app) == user.azureactivedirectoryobjectid), None)
             if app_owner:
                 user_map[app_owner.azureactivedirectoryobjectid].apps.append(app)
 
         # Map flows to their creators
         for flow in self._cloud_flows:
-            flow_creator = find(users, lambda user: flow.properties.creator.userId == user.azureactivedirectoryobjectid)
+            flow_creator = next((user for user in users if get_cloud_flow_owner_id(flow) == user.azureactivedirectoryobjectid), None)
             if flow_creator:
                 user_map[flow_creator.azureactivedirectoryobjectid].flows.append(flow)
 
@@ -43,8 +44,8 @@ class AppDeveloperAnalyzer:
         )
 
     def analyze(self) -> AppDevelopersReport:
-        guest_users = filter_(self._users, lambda u: u.domainname.find('#EXT#') != -1)
-        deleted_users = filter_(self._users, lambda u: u.azurestate in [1, 2])
+        guest_users = [user for user in self._users if user.domainname.find('#EXT#') != -1]
+        deleted_users = [user for user in self._users if user.azurestate in [1, 2]]
 
         guest_developers = self._get_user_to_apps_and_flows_map(guest_users)
         inactive_developers = self._get_user_to_apps_and_flows_map(deleted_users)

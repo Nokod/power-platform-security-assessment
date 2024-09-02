@@ -11,7 +11,7 @@ class LastActivityTimes(BaseModel):
 
 
 class LastActivity(BaseModel):
-    lastActivity: Optional[LastActivityTimes] = None
+    lastActivity: LastActivityTimes
 
 
 class LinkedEnvironmentMetadata(BaseModel):
@@ -25,7 +25,7 @@ class EnvironmentProperties(BaseModel):
     createdTime: str
     createdBy: Dict[str, Any]
     usedBy: Optional[Any] = None
-    lastActivity: Optional[LastActivity] = None
+    lastActivity: LastActivity
     lastModifiedTime: str
     provisioningState: str
     creationType: str

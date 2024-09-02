@@ -1,3 +1,4 @@
+import random
 from typing import Union
 
 from pydash import find, flatten, chain
@@ -13,6 +14,11 @@ class AppDeveloperTextualReport:
     def __init__(self, environments: list[Environment]):
         self._environments = environments
 
+    @staticmethod
+    def _select_example_user(user_resources: list[UserResources]) -> UserResources:
+        # Select a random user with at least one app or flow
+        return random.choice([u for u in user_resources if len(u.apps) + len(u.flows) >= 1])
+
     def _get_environment_names(self, apps: list[Union[Application, CloudFlow]]) -> list[str]:
         environment_ids = {extract_environment_id(app.id) for app in apps}
         return [
@@ -23,7 +29,7 @@ class AppDeveloperTextualReport:
     def _generate_env_text(self, resources: list, resource_type: str):
         apps_envs = self._get_environment_names(flatten(resources))
         envs_text = f'{", ".join(apps_envs)} environment{"" if len(apps_envs) == 1 else "s"}'
-        return f'{len(resources)} {resource_type} in {envs_text}.'
+        return f'{len(resources)} {resource_type}{"" if len(resources) == 1 else "s"} in {envs_text}'
 
     def _generate_developer_textual_report(self, user_resources: list[UserResources], developer_type: str) -> str:
         users_count = len(user_resources)
@@ -57,16 +63,16 @@ class AppDeveloperTextualReport:
             f'and {total_active_count} {"is" if total_active_count == 1 else "are"} active.\n'
         )
 
-        example_user = user_resources[0]
+        example_user = self._select_example_user(user_resources)
         textual_report += f'For example, {example_user.user.fullname} from {extract_user_domain(example_user.user)} developed '
 
         if example_user.apps:
-            textual_report += self._generate_env_text(example_user.apps, 'applications')
+            textual_report += self._generate_env_text(example_user.apps, 'application')
 
         if example_user.flows:
             if example_user.apps:
                 textual_report += ' and '  # Add "and" only if there are apps
-            textual_report += self._generate_env_text(example_user.flows, 'flows')
+            textual_report += self._generate_env_text(example_user.flows, 'flow')
 
         return textual_report
 

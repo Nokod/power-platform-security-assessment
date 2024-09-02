@@ -1,3 +1,5 @@
+import random
+
 from power_platform_security_assessment.base_classes import ConnectorWithConnections
 from power_platform_security_assessment.security_features.common import extract_environment_ids_from_connectors
 from power_platform_security_assessment.security_features.connectors.model import ConnectorsAnalysisResult
@@ -6,7 +8,11 @@ from power_platform_security_assessment.security_features.connectors.model impor
 class ConnectorsAnalyzerTextualReport:
 
     @staticmethod
-    def _generate_textual_report_for_type(connectors: list[ConnectorWithConnections], connector_type: str) -> str:
+    def _select_example_connector(connectors: list[ConnectorWithConnections]) -> ConnectorWithConnections:
+        # Select a random connector with at least one connection instance
+        return random.choice([c for c in connectors if len(c.connections) >= 1])
+
+    def _generate_textual_report_for_type(self, connectors: list[ConnectorWithConnections], connector_type: str) -> str:
         connectors_count = len(connectors)
         if connectors_count == 0:
             return ""
@@ -21,7 +27,7 @@ class ConnectorsAnalyzerTextualReport:
             f'hold{"s" if connectors_count == 1 else ""} {connections_count} connection instance{"" if connections_count == 1 else "s"}.\n'
         )
 
-        example_connector = connectors[0]
+        example_connector = self._select_example_connector(connectors)
         example_connector_connections_count = len(example_connector.connections)
         textual_report += (
             f'For example, the connector {example_connector.connector.properties.displayName} is {connector_type}, and '
