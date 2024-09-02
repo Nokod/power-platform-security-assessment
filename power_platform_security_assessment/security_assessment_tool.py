@@ -9,6 +9,11 @@ from power_platform_security_assessment.base_classes import (
 from power_platform_security_assessment.consts import Requests, ResponseKeys, ComponentType
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
+from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
+from power_platform_security_assessment.security_features.bypass_consent.bypass_consent_analyzer import BypassConsentAnalyzer
+from power_platform_security_assessment.security_features.common import (
+    get_application_owner_id, get_cloud_flow_owner_id, get_model_driven_app_owner_id, get_desktop_flow_owner_id
+)
 from power_platform_security_assessment.report_builder.report_builder import ReportBuilder
 from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import \
     AppDeveloperAnalyzer
@@ -47,8 +52,7 @@ class SecurityAssessmentTool:
 
     @staticmethod
     def _display_environment_results(environments_results, failed_environments):
-        print(
-            f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
+        print(f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
 
         results: list[tuple[str, ResourceData, ResourceData, ResourceData, ResourceData, int]] = []
         for environment_results in environments_results:
@@ -57,8 +61,7 @@ class SecurityAssessmentTool:
             applications_result: ResourceData[Application] = environment_results[ComponentType.APPLICATIONS]
             cloud_flows_result: ResourceData[CloudFlow] = environment_results[ComponentType.CLOUD_FLOWS]
             desktop_flows_result: ResourceData[DesktopFlow] = environment_results[ComponentType.DESKTOP_FLOWS]
-            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results[
-                ComponentType.MODEL_DRIVEN_APPS]
+            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results[ComponentType.MODEL_DRIVEN_APPS]
 
             results.append((
                 environment.properties.displayName,
@@ -106,6 +109,25 @@ class SecurityAssessmentTool:
             )
 
         return users_list
+
+    @staticmethod
+    def _get_environment_developers_count(environment_results) -> int:
+        component_mappings = {
+            ComponentType.APPLICATIONS: get_application_owner_id,
+            ComponentType.CLOUD_FLOWS: get_cloud_flow_owner_id,
+            ComponentType.DESKTOP_FLOWS: get_desktop_flow_owner_id,
+            ComponentType.MODEL_DRIVEN_APPS: get_model_driven_app_owner_id,
+        }
+
+        # Use a set to store unique developer IDs
+        developers = {
+            user_id
+            for component_type, get_owner_id in component_mappings.items()
+            for component in environment_results[component_type].value
+            if (user_id := get_owner_id(component))
+        }
+
+        return len(developers)
 
     @staticmethod
     def _handle_connector_connections(environments_results):

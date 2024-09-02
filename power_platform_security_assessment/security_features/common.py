@@ -26,6 +26,22 @@ def extract_user_domain(user: User) -> str:
     return user.domainname.split("@")[1].split(".")[0] if '@' in user.domainname else user.domainname
 
 
+def get_application_owner_id(app: Application) -> str:
+    return get(app, 'properties.owner.id')
+
+
+def get_cloud_flow_owner_id(cloud_flow: CloudFlow) -> str:
+    return get(cloud_flow, 'properties.creator.userId')
+
+
+def get_desktop_flow_owner_id(desktop_flow: DesktopFlow) -> str:
+    return desktop_flow.workflowidunique
+
+
+def get_model_driven_app_owner_id(model_driven_app: ModelDrivenApp) -> str:
+    return model_driven_app.appmoduleidunique
+
+
 def is_app_disabled(app: Application) -> bool:
     return (get(app, 'properties.executionRestrictions.appQuarantineState.quarantineStatus') == 'Quarantined'
             or len(get(app, 'properties.executionRestrictions.dataLossPreventionEvaluationResult.violations', [])) > 0)
