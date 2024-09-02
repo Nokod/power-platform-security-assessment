@@ -87,13 +87,16 @@ class ConnectionsFetcher(BaseResourceFetcher):
                 url=next_page_url,
             )
             connections.extend(connections_page)
+            self._resource_count += len(connections_page)
 
         return connections
 
-    def fetch_connections(self) -> list[ConnectorWithConnections]:
+    def _do_fetch_resource_data(self) -> list[ConnectorWithConnections]:
         token = self._token_manager.fetch_access_token(Requests.ENVIRONMENTS_SCOPE)
         connections = self._fetch_all_connections(token)
         used_connector_names = list({connection.connector_name for connection in connections})
+
+        self._resource_count = 0 # Reset the resource count before fetching connectors
         connectors = self._fetch_connectors(
             token=token,
             connector_names=used_connector_names

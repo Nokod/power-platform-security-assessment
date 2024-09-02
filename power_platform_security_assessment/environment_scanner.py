@@ -1,7 +1,7 @@
 import concurrent.futures
 
 from power_platform_security_assessment.base_classes import (
-    Environment, User, Application, CloudFlow, ConnectorWithConnections, DesktopFlow, ModelDrivenApp
+    Environment, User, Application, CloudFlow, ConnectorWithConnections, DesktopFlow, ModelDrivenApp, ResourceData
 )
 from power_platform_security_assessment.fetchers.applications_fetcher import ApplicationsFetcher
 from power_platform_security_assessment.fetchers.cloud_flows_fetcher import CloudFlowsFetcher
@@ -18,25 +18,25 @@ class EnvironmentScanner:
         self._env_id = environment.id.split('/')[-1]
         self._token_manager = token_manager
 
-    def _fetch_applications(self) -> list[Application]:
+    def _fetch_applications(self) -> ResourceData[Application]:
         app_fetcher = ApplicationsFetcher(
             env_id=self._env_id,
             token_manager=self._token_manager,
         )
 
-        return app_fetcher.fetch_applications()
+        return app_fetcher.fetch_resource_data()
 
-    def _fetch_cloud_flows(self) -> list[CloudFlow]:
+    def _fetch_cloud_flows(self) -> ResourceData[CloudFlow]:
         cloud_flow_fetcher = CloudFlowsFetcher(
             env_id=self._env_id,
             token_manager=self._token_manager,
         )
 
-        return cloud_flow_fetcher.fetch_cloud_flows()
+        return cloud_flow_fetcher.fetch_resource_data()
 
-    def _fetch_desktop_flows(self) -> list[DesktopFlow]:
+    def _fetch_desktop_flows(self) -> ResourceData[DesktopFlow]:
         if not self._environment.properties.linkedEnvironmentMetadata:
-            return []
+            return ResourceData()
 
         desktop_flow_fetcher = DesktopFlowsFetcher(
             instance_api_url=self._environment.properties.linkedEnvironmentMetadata.instanceApiUrl,
@@ -44,11 +44,11 @@ class EnvironmentScanner:
             token_manager=self._token_manager,
         )
 
-        return desktop_flow_fetcher.fetch_desktop_flows()
+        return desktop_flow_fetcher.fetch_resource_data()
 
-    def _fetch_model_driven_apps(self) -> list[ModelDrivenApp]:
+    def _fetch_model_driven_apps(self) -> ResourceData[ModelDrivenApp]:
         if not self._environment.properties.linkedEnvironmentMetadata:
-            return []
+            return ResourceData()
 
         model_driven_apps_fetcher = ModelDrivenAppsFetcher(
             instance_api_url=self._environment.properties.linkedEnvironmentMetadata.instanceApiUrl,
@@ -56,19 +56,19 @@ class EnvironmentScanner:
             token_manager=self._token_manager,
         )
 
-        return model_driven_apps_fetcher.fetch_model_driven_apps()
+        return model_driven_apps_fetcher.fetch_resource_data()
 
-    def _fetch_connections(self) -> list[ConnectorWithConnections]:
+    def _fetch_connections(self) -> ResourceData[ConnectorWithConnections]:
         connections_fetcher = ConnectionsFetcher(
             env_id=self._env_id,
             token_manager=self._token_manager,
         )
 
-        return connections_fetcher.fetch_connections()
+        return connections_fetcher.fetch_resource_data()
 
-    def _fetch_users(self) -> list[User]:
+    def _fetch_users(self) -> ResourceData[User]:
         if not self._environment.properties.linkedEnvironmentMetadata:
-            return []
+            return ResourceData()
 
         users_fetcher = UsersFetcher(
             instance_api_url=self._environment.properties.linkedEnvironmentMetadata.instanceApiUrl,
@@ -76,7 +76,7 @@ class EnvironmentScanner:
             token_manager=self._token_manager,
         )
 
-        return users_fetcher.fetch_users()
+        return users_fetcher.fetch_resource_data()
 
     def scan_environment(self):
         with concurrent.futures.ThreadPoolExecutor() as executor:

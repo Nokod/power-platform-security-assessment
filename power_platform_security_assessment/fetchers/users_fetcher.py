@@ -9,6 +9,7 @@ class UsersFetcher(BaseResourceFetcher):
     def __init__(self, instance_api_url: str, env_id: str, token_manager: TokenManager):
         self._instance_api_url = instance_api_url
         super().__init__(env_id, token_manager)
+        self._max_resource_count = 50_000
 
     def _get_request_url(self):
         params = {
@@ -35,8 +36,9 @@ class UsersFetcher(BaseResourceFetcher):
         while next_page_url:
             users, next_page_url = self._fetch_single_users_page(token=token, url=next_page_url)
             users_list.extend(users)
+            self._resource_count += len(users)
 
         return users_list
 
-    def fetch_users(self) -> list[User]:
+    def _do_fetch_resource_data(self) -> list[User]:
         return self._fetch_users()

@@ -36,8 +36,9 @@ class DesktopFlowsFetcher(BaseResourceFetcher):
         while next_page_url:
             desktop_flows, next_page_url = self._fetch_single_page_desktop_flows(token=token, url=next_page_url)
             all_desktop_flows.extend(desktop_flows)
+            self._resource_count += len(desktop_flows)
 
         return all_desktop_flows
 
-    def fetch_desktop_flows(self) -> list[DesktopFlow]:
+    def _do_fetch_resource_data(self) -> list[DesktopFlow]:
         return self._fetch_desktop_flows()
