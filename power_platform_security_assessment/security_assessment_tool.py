@@ -195,6 +195,7 @@ class SecurityAssessmentTool:
         all_applications = flatten_deep([env_results[ComponentType.APPLICATIONS].value for env_results in environments_results])
         all_cloud_flows = flatten_deep([env_results[ComponentType.CLOUD_FLOWS].value for env_results in environments_results])
 
+        print()
         self._display_environment_results(environments_results, failed_environments)
         self._display_users(all_users_list)
         self._display_connections(all_connector_connections)
@@ -225,7 +226,6 @@ class SecurityAssessmentTool:
                     finally:
                         bar()
 
-        print()
         self._handle_results(environments_results, failed_environments, environments)
 
 
