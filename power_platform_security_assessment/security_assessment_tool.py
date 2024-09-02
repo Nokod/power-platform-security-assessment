@@ -1,6 +1,7 @@
 import concurrent.futures
 
 import msal
+from alive_progress import alive_bar
 from pydash import flatten_deep, values
 
 from power_platform_security_assessment.base_classes import (
@@ -194,6 +195,7 @@ class SecurityAssessmentTool:
         all_applications = flatten_deep([env_results[ComponentType.APPLICATIONS].value for env_results in environments_results])
         all_cloud_flows = flatten_deep([env_results[ComponentType.CLOUD_FLOWS].value for env_results in environments_results])
 
+        print()
         self._display_environment_results(environments_results, failed_environments)
         self._display_users(all_users_list)
         self._display_connections(all_connector_connections)
@@ -209,17 +211,20 @@ class SecurityAssessmentTool:
         environments_results = []
         failed_environments = []
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in environments]
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    result = future.result()
-                    if not result['error']:
-                        environments_results.append(result)
-                    else:
-                        failed_environments.append(result)
-                except Exception as e:
-                    print(f"An error occurred during environment scanning: {e}")
+        with alive_bar(len(environments), bar='blocks') as bar:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in environments]
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        result = future.result()
+                        if not result['error']:
+                            environments_results.append(result)
+                        else:
+                            failed_environments.append(result)
+                    except Exception as e:
+                        print(f"An error occurred during environment scanning: {e}")
+                    finally:
+                        bar()
 
         self._handle_results(environments_results, failed_environments, environments)
 
