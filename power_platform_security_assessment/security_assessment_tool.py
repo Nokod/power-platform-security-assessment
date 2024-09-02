@@ -11,6 +11,9 @@ from power_platform_security_assessment.environment_scanner import EnvironmentSc
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
 from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
 from power_platform_security_assessment.security_features.bypass_consent.bypass_consent_analyzer import BypassConsentAnalyzer
+from power_platform_security_assessment.security_features.common import (
+    get_application_owner_id, get_cloud_flow_owner_id, get_model_driven_app_owner_id, get_desktop_flow_owner_id
+)
 from power_platform_security_assessment.security_features.connectors.connectors_analyzer import ConnectorsAnalyzer
 from power_platform_security_assessment.token_manager import TokenManager
 
@@ -101,6 +104,25 @@ class SecurityAssessmentTool:
             )
 
         return users_list
+
+    @staticmethod
+    def _get_environment_developers_count(environment_results) -> int:
+        component_mappings = {
+            ComponentType.APPLICATIONS: get_application_owner_id,
+            ComponentType.CLOUD_FLOWS: get_cloud_flow_owner_id,
+            ComponentType.DESKTOP_FLOWS: get_desktop_flow_owner_id,
+            ComponentType.MODEL_DRIVEN_APPS: get_model_driven_app_owner_id,
+        }
+
+        # Use a set to store unique developer IDs
+        developers = {
+            user_id
+            for component_type, get_owner_id in component_mappings.items()
+            for component in environment_results[component_type].value
+            if (user_id := get_owner_id(component))
+        }
+
+        return len(developers)
 
     @staticmethod
     def _handle_connector_connections(environments_results):

@@ -3,6 +3,7 @@ from pydash import map_values, key_by, sort_by, values
 from power_platform_security_assessment.base_classes import CloudFlow, Application, User, Environment
 from power_platform_security_assessment.security_features.app_developers.app_developer_textual_report import AppDeveloperTextualReport
 from power_platform_security_assessment.security_features.app_developers.model import UserResources, AppDevelopersReport, Developers
+from power_platform_security_assessment.security_features.common import get_application_owner_id, get_cloud_flow_owner_id
 
 
 class AppDeveloperAnalyzer:
@@ -25,13 +26,13 @@ class AppDeveloperAnalyzer:
 
         # Map apps to their owners
         for app in self._apps:
-            app_owner = next((user for user in users if app.properties.owner.id == user.azureactivedirectoryobjectid), None)
+            app_owner = next((user for user in users if get_application_owner_id(app) == user.azureactivedirectoryobjectid), None)
             if app_owner:
                 user_map[app_owner.azureactivedirectoryobjectid].apps.append(app)
 
         # Map flows to their creators
         for flow in self._cloud_flows:
-            flow_creator = next((user for user in users if flow.properties.creator.userId == user.azureactivedirectoryobjectid), None)
+            flow_creator = next((user for user in users if get_cloud_flow_owner_id(flow) == user.azureactivedirectoryobjectid), None)
             if flow_creator:
                 user_map[flow_creator.azureactivedirectoryobjectid].flows.append(flow)
 
