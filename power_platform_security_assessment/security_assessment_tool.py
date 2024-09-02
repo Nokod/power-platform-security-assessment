@@ -9,8 +9,11 @@ from power_platform_security_assessment.base_classes import (
 from power_platform_security_assessment.consts import Requests, ResponseKeys, ComponentType
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
-from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
-from power_platform_security_assessment.security_features.bypass_consent.bypass_consent_analyzer import BypassConsentAnalyzer
+from power_platform_security_assessment.report_builder.report_builder import ReportBuilder
+from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import \
+    AppDeveloperAnalyzer
+from power_platform_security_assessment.security_features.bypass_consent.bypass_consent_analyzer import \
+    BypassConsentAnalyzer
 from power_platform_security_assessment.security_features.connectors.connectors_analyzer import ConnectorsAnalyzer
 from power_platform_security_assessment.token_manager import TokenManager
 
@@ -44,7 +47,8 @@ class SecurityAssessmentTool:
 
     @staticmethod
     def _display_environment_results(environments_results, failed_environments):
-        print(f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
+        print(
+            f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
 
         results: list[tuple[str, ResourceData, ResourceData, ResourceData, ResourceData, int]] = []
         for environment_results in environments_results:
@@ -53,7 +57,8 @@ class SecurityAssessmentTool:
             applications_result: ResourceData[Application] = environment_results[ComponentType.APPLICATIONS]
             cloud_flows_result: ResourceData[CloudFlow] = environment_results[ComponentType.CLOUD_FLOWS]
             desktop_flows_result: ResourceData[DesktopFlow] = environment_results[ComponentType.DESKTOP_FLOWS]
-            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results[ComponentType.MODEL_DRIVEN_APPS]
+            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results[
+                ComponentType.MODEL_DRIVEN_APPS]
 
             results.append((
                 environment.properties.displayName,
@@ -152,33 +157,49 @@ class SecurityAssessmentTool:
     def _display_app_developers(all_applications, all_cloud_flows, users_list, environments):
         app_developer_analyzer = AppDeveloperAnalyzer(all_applications, all_cloud_flows, users_list, environments)
         app_developers_result = app_developer_analyzer.analyze()
-        print(app_developers_result.textual_report)
+        return app_developers_result.textual_report
 
     @staticmethod
     def _display_connector_issues(all_connector_connections: list[ConnectorWithConnections]):
         connectors_analyzer = ConnectorsAnalyzer(all_connector_connections)
         result = connectors_analyzer.analyze()
-        print(result.textual_report)
+        return result.textual_report
 
     @staticmethod
     def _display_bypass_consent(all_applications: list[Application]):
         bypass_consent_analyzer = BypassConsentAnalyzer(all_applications)
         bypass_consent_result = bypass_consent_analyzer.analyze()
-        print(bypass_consent_result.textual_report)
+        return bypass_consent_result.textual_report
 
     def _handle_results(self, environments_results: list, failed_environments: list, environments: list[Environment]):
-        all_users_list = self._handle_environment_users(environments_results)
-        all_connector_connections = self._handle_connector_connections(environments_results)
-        all_applications = flatten_deep([env_results[ComponentType.APPLICATIONS].value for env_results in environments_results])
-        all_cloud_flows = flatten_deep([env_results[ComponentType.CLOUD_FLOWS].value for env_results in environments_results])
+        (all_applications, all_cloud_flows, all_connector_connections, all_desktop_flows, all_model_driven_apps,
+         all_users_list) = self.fetch_resources(environments_results)
+
+        app_developers_report = self._display_app_developers(all_applications, all_cloud_flows, all_users_list,
+                                                             environments)
+        connector_issues_report = self._display_connector_issues(all_connector_connections)
+        bypass_consent_report = self._display_bypass_consent(all_applications)
+        report_builder = ReportBuilder(all_applications, all_cloud_flows, all_desktop_flows, all_model_driven_apps,
+                                       all_users_list, all_connector_connections, environments_results)
+        report_builder.build_report(extra_textual_reports=[app_developers_report, connector_issues_report,
+                                                           bypass_consent_report])
 
         self._display_environment_results(environments_results, failed_environments)
         self._display_users(all_users_list)
         self._display_connections(all_connector_connections)
 
-        self._display_app_developers(all_applications, all_cloud_flows, all_users_list, environments)
-        self._display_connector_issues(all_connector_connections)
-        self._display_bypass_consent(all_applications)
+    def fetch_resources(self, environments_results):
+        all_users_list = self._handle_environment_users(environments_results)
+        all_connector_connections = self._handle_connector_connections(environments_results)
+        all_applications = flatten_deep(
+            [env_results[ComponentType.APPLICATIONS].value for env_results in environments_results])
+        all_cloud_flows = flatten_deep(
+            [env_results[ComponentType.CLOUD_FLOWS].value for env_results in environments_results])
+        all_desktop_flows = flatten_deep(
+            [env_results[ComponentType.DESKTOP_FLOWS].value for env_results in environments_results])
+        all_model_driven_apps = flatten_deep(
+            [env_results[ComponentType.MODEL_DRIVEN_APPS].value for env_results in environments_results])
+        return all_applications, all_cloud_flows, all_connector_connections, all_desktop_flows, all_model_driven_apps, all_users_list
 
     def run_security_assessment(self):
         self._create_token()
@@ -188,7 +209,8 @@ class SecurityAssessmentTool:
         failed_environments = []
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in environments]
+            futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in
+                       environments]
             for future in concurrent.futures.as_completed(futures):
                 try:
                     result = future.result()

@@ -21,7 +21,7 @@ class ModelDrivenAppsFetcher(BaseResourceFetcher):
             'Authorization': f'Bearer {token}',
         })
 
-        model_driven_apps = response_data.get('value', [])
+        model_driven_apps = [ModelDrivenApp(**app) for app in response_data.get('value', [])]
         next_page = response_data.get('@odata.nextLink', None)
 
         return model_driven_apps, next_page
