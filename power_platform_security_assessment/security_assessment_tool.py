@@ -9,11 +9,6 @@ from power_platform_security_assessment.base_classes import (
 from power_platform_security_assessment.consts import Requests, ResponseKeys, ComponentType
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
 from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
-from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import AppDeveloperAnalyzer
-from power_platform_security_assessment.security_features.bypass_consent.bypass_consent_analyzer import BypassConsentAnalyzer
-from power_platform_security_assessment.security_features.common import (
-    get_application_owner_id, get_cloud_flow_owner_id, get_model_driven_app_owner_id, get_desktop_flow_owner_id
-)
 from power_platform_security_assessment.report_builder.report_builder import ReportBuilder
 from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import \
     AppDeveloperAnalyzer
@@ -111,25 +106,6 @@ class SecurityAssessmentTool:
         return users_list
 
     @staticmethod
-    def _get_environment_developers_count(environment_results) -> int:
-        component_mappings = {
-            ComponentType.APPLICATIONS: get_application_owner_id,
-            ComponentType.CLOUD_FLOWS: get_cloud_flow_owner_id,
-            ComponentType.DESKTOP_FLOWS: get_desktop_flow_owner_id,
-            ComponentType.MODEL_DRIVEN_APPS: get_model_driven_app_owner_id,
-        }
-
-        # Use a set to store unique developer IDs
-        developers = {
-            user_id
-            for component_type, get_owner_id in component_mappings.items()
-            for component in environment_results[component_type].value
-            if (user_id := get_owner_id(component))
-        }
-
-        return len(developers)
-
-    @staticmethod
     def _handle_connector_connections(environments_results):
         # Dictionary to map connector names to their respective ConnectorWithConnections objects
         connector_mapping: dict[str, ConnectorWithConnections] = {}
@@ -201,14 +177,14 @@ class SecurityAssessmentTool:
                                                              environments)
         connector_issues_report = self._display_connector_issues(all_connector_connections)
         bypass_consent_report = self._display_bypass_consent(all_applications)
+        self._display_environment_results(environments_results, failed_environments)
+        self._display_users(all_users_list)
+        self._display_connections(all_connector_connections)
+
         report_builder = ReportBuilder(all_applications, all_cloud_flows, all_desktop_flows, all_model_driven_apps,
                                        all_users_list, all_connector_connections, environments_results)
         report_builder.build_report(extra_textual_reports=[app_developers_report, connector_issues_report,
                                                            bypass_consent_report])
-
-        self._display_environment_results(environments_results, failed_environments)
-        self._display_users(all_users_list)
-        self._display_connections(all_connector_connections)
 
     def fetch_resources(self, environments_results):
         all_users_list = self._handle_environment_users(environments_results)

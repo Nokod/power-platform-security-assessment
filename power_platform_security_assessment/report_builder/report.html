@@ -1,33 +1,99 @@
 <html>
 <head>
     <meta charset="utf-8"/>
+    <title>Power Platform Security Assessment Report</title>
+    <style>
+        .extra_text_box {
+            width: 1200px;
+            padding: 10px;
+            border: 5px;
+            margin-left: 150px;
+            margin-right: auto;
+            margin-bottom: 20px;
+            border-radius: 20px;
+        }
+        .display {
+            display: flex; justify-content: space-around; flex-direction: row; flex-wrap: wrap;
+        }
+        .main {
+            font-family: Inter, Roboto, Helvetica, Arial, sans-serif !important;
+        }
+        .title {
+            font-size: xx-large;
+            font-weight: 1000px;
+            margin-bottom: 10px;
+            margin-left: 50px;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            position: relative;
+            left: 50%;
+        }
+        li {
+            margin: 15px 0;
+        }
+    </style>
 </head>
-<body>
+<body class="main">
 <div>
     <script type="text/javascript">
         window.PlotlyConfig = {MathJaxConfig: 'local'};
+            function openGmail() {
+        const subject = encodeURIComponent("Power Platform Security Assessment Report Summary");
+        const body = encodeURIComponent("{{ email_body }}");
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=support@nokodsecurity.com&su=${subject}&body=${body}`;
+        window.open(gmailUrl, '_blank');
+    }
     </script>
 </div>
 
 <div>
-    <h1 style="text-align: center;">Power Platform Security Assessment Report</h1>
-    {% for report in reports %}
-    <div style="display: flex; justify-content: space-around;">
-        {{ report }}
+    <h1 style="text-align: center; margin-top: 30px">Power Platform Security Assessment Report</h1>
+    <div>
+        <div class="title">Scanned Environments</div>
+        <div class="display">
+            {% for report in found_environments %}
+            {{ report }}
+            {% endfor %}
+        </div>
+        <div class="title">Environments</div>
+        <div class="display">
+            {% for report in environment_reports %}
+            {{ report }}
+            {% endfor %}
+        </div>
+        <div class="title">Users</div>
+        <div class="display">
+            {% for report in user_reports %}
+            {{ report }}
+            {% endfor %}
+        </div>
+        <div class="title">Top 3s</div>
+        <div class="display">
+            {% for report in top_3_reports %}
+            {{ report }}
+            {% endfor %}
+        </div>
     </div>
-    {% endfor %}
-    <div style="width: 1200px;
-    padding: 10px;
-    border: 5px solid #e8e8e8;
-    background-color: #f9fafb;
-    margin: 0;
-    margin-left: auto;
-    margin-right: auto;
-    border-radius: 20px;">
-        {% for text in extra_textual_reports %}
-        <p>{{ text }}</p>
-        {% endfor %}
+    <div class="title">Security Issues</div>
+    <div class="extra_text_box">
+        <ul>
+            {% for issue in security_issues %}
+            <li>{{ issue }}</li>
+            {% endfor %}
+        </ul>
     </div>
+    <button class="button" onclick="openGmail()">Want to share your data anonymously? Click to preview email</button>
 </div>
 </body>
 </html>
