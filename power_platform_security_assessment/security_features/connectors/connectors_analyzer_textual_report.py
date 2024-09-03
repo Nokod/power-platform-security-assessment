@@ -21,17 +21,17 @@ class ConnectorsAnalyzerTextualReport:
         environments_count = len(extract_environment_ids_from_connectors(connectors))
 
         textual_report = (
-            f'There {"is" if connectors_count == 1 else "are"} {connectors_count} {connector_type} connector{"" if connectors_count == 1 else "s"} '
+            f'There {"is" if connectors_count == 1 else "are"} <b>{connectors_count} {connector_type}</b> connector{"" if connectors_count == 1 else "s"} '
             f'in {environments_count} environment{"" if environments_count == 1 else "s"}. '
             f'{"This" if connectors_count == 1 else "These"} connector{"" if connectors_count == 1 else "s"} '
-            f'hold{"s" if connectors_count == 1 else ""} {connections_count} connection instance{"" if connections_count == 1 else "s"}.\n'
+            f'hold{"s" if connectors_count == 1 else ""} <b>{connections_count}</b> connection instance{"" if connections_count == 1 else "s"}.\n'
         )
 
         example_connector = self._select_example_connector(connectors)
         example_connector_connections_count = len(example_connector.connections)
         textual_report += (
-            f'For example, the connector {example_connector.connector.properties.displayName} is {connector_type}, and '
-            f'{example_connector_connections_count} connection instance{"" if example_connector_connections_count == 1 else "s"} '
+            f'For example, the connector <b>{example_connector.connector.properties.displayName}</b> is <b>{connector_type}</b>, and '
+            f'<b>{example_connector_connections_count}</b> connection instance{"" if example_connector_connections_count == 1 else "s"} '
             f'{"is" if example_connector_connections_count == 1 else "are"} found in your organization.\n'
         )
 

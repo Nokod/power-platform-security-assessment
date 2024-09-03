@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import plotly.graph_objects as go
 from jinja2 import Template
@@ -40,7 +42,9 @@ class ReportBuilder:
         user_reports = [self._build_users_pie_charts()]
         top_3_reports = [self._build_biggest_environments(), self._build_used_connections()]
         email_body = self._build_email_body()
-        with open('report_builder/report.html', 'r') as f:
+        __location__ = os.path.realpath(
+            os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        with open(os.path.join(__location__, 'report.html')) as f:
             template = Template(f.read())
 
         rendered_template = template.render(found_environments=env_summary, environment_reports=environment_reports,
