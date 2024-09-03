@@ -94,6 +94,13 @@
         </ul>
     </div>
     <button class="button" onclick="openGmail()">Want to share your data anonymously? Click to preview email</button>
+    <div class="extra_text_box">
+        <p>Failed to scan the following environments due to insufficient permissions:</p>
+        <ul>
+            {% for environment in failed_environments %}
+            <li>{{ environment }}</li>
+            {% endfor %}
+    </div>
 </div>
 </body>
 </html>

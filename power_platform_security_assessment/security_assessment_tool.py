@@ -48,7 +48,8 @@ class SecurityAssessmentTool:
 
     @staticmethod
     def _display_environment_results(environments_results, failed_environments):
-        print(f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
+        print(
+            f'{"Environment":<44} {"Applications":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
 
         results: list[tuple[str, ResourceData, ResourceData, ResourceData, ResourceData, int]] = []
         for environment_results in environments_results:
@@ -57,7 +58,8 @@ class SecurityAssessmentTool:
             applications_result: ResourceData[Application] = environment_results[ComponentType.APPLICATIONS]
             cloud_flows_result: ResourceData[CloudFlow] = environment_results[ComponentType.CLOUD_FLOWS]
             desktop_flows_result: ResourceData[DesktopFlow] = environment_results[ComponentType.DESKTOP_FLOWS]
-            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results[ComponentType.MODEL_DRIVEN_APPS]
+            model_driven_apps_result: ResourceData[ModelDrivenApp] = environment_results[
+                ComponentType.MODEL_DRIVEN_APPS]
 
             results.append((
                 environment.properties.displayName,
@@ -183,7 +185,8 @@ class SecurityAssessmentTool:
         self._display_connections(all_connector_connections)
 
         report_builder = ReportBuilder(all_applications, all_cloud_flows, all_desktop_flows, all_model_driven_apps,
-                                       all_users_list, all_connector_connections, environments_results)
+                                       all_users_list, all_connector_connections, environments_results,
+                                       failed_environments)
         report_builder.build_report(extra_textual_reports=[app_developers_report, connector_issues_report,
                                                            bypass_consent_report])
 
@@ -209,7 +212,8 @@ class SecurityAssessmentTool:
 
         with alive_bar(len(environments), bar='blocks') as bar:
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in environments]
+                futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in
+                           environments]
                 for future in concurrent.futures.as_completed(futures):
                     try:
                         result = future.result()

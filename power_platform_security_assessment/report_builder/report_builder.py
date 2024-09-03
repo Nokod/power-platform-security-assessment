@@ -25,7 +25,7 @@ class ReportBuilder:
 
     def __init__(self, applications: list[Application], cloud_flows: list[CloudFlow], desktop_flows: list[DesktopFlow],
                  model_driven_apps: list[ModelDrivenApp], users: list[User],
-                 connectors: list[ConnectorWithConnections], environments_results: list):
+                 connectors: list[ConnectorWithConnections], environments_results: list, failed_environments: list):
         self.fig = None
         self.applications = applications
         self.cloud_flows = cloud_flows
@@ -34,6 +34,7 @@ class ReportBuilder:
         self.users = users
         self.connectors = connectors
         self.environments_results = environments_results
+        self.failed_environments = failed_environments
 
     def build_report(self, extra_textual_reports: list[str] = None):
         env_summary = [self._build_env_summary()]
@@ -42,6 +43,8 @@ class ReportBuilder:
         user_reports = [self._build_users_pie_charts()]
         top_3_reports = [self._build_biggest_environments(), self._build_used_connections()]
         email_body = self._build_email_body()
+        failed_environments = [env[ComponentType.ENVIRONMENT].properties.displayName for env in
+                               self.failed_environments]
         __location__ = os.path.realpath(
             os.path.join(os.getcwd(), os.path.dirname(__file__)))
         with open(os.path.join(__location__, 'report.html')) as f:
@@ -49,7 +52,8 @@ class ReportBuilder:
 
         rendered_template = template.render(found_environments=env_summary, environment_reports=environment_reports,
                                             user_reports=user_reports, top_3_reports=top_3_reports,
-                                            security_issues=extra_textual_reports, email_body=email_body)
+                                            security_issues=extra_textual_reports, email_body=email_body,
+                                            failed_environments=failed_environments)
         with open('output.html', 'w') as f:
             f.write(rendered_template)
 
