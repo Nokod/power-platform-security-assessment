@@ -56,6 +56,7 @@ class ReportBuilder:
                                             failed_environments=failed_environments)
         with open('output.html', 'w') as f:
             f.write(rendered_template)
+            print(f'Report generated successfully. Output saved to {os.path.abspath("output.html")}')
 
     def _build_email_body(self):
         data = self.get_components_per_env()

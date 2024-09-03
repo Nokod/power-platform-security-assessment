@@ -7,13 +7,14 @@ An open source application that can be used locally to extract information from 
 - **Token Acquisition**: Uses Microsoft Authentication Library (MSAL) to acquire access tokens.
 - **Environment Fetching**: Retrieves environment details from the Power Platform.
 - **Security Assessment**: Runs security assessments on the fetched environments.
+- **Report Generation**: Generates a report with the security assessment results. The report is saved in the current working directory.
 
 ## Installation
 
 To install the package, run the following command:
 
 ```bash
-python3 -m pip install power-platform-security-assessment
+pip install power-platform-security-assessment
 ```
 
 ## Usage
