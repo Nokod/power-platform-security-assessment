@@ -1,6 +1,7 @@
 from power_platform_security_assessment.consts import ComponentType
 from power_platform_security_assessment.security_features.common import get_application_owner_id, \
     get_cloud_flow_owner_id, get_desktop_flow_owner_id, get_model_driven_app_owner_id
+from datetime import datetime
 
 
 def get_environment_developers_count(environment_results) -> int:
@@ -23,4 +24,5 @@ def get_environment_developers_count(environment_results) -> int:
 
 
 def round_time_to_seconds(time: str):
-    return time.split('.')[0]
+    time = datetime.fromisoformat(time.replace('Z', '+00:00'))
+    return time.strftime('%Y/%m/%d %H:%M:%S')
