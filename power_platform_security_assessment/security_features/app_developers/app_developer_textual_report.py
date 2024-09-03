@@ -28,8 +28,8 @@ class AppDeveloperTextualReport:
 
     def _generate_env_text(self, resources: list, resource_type: str):
         apps_envs = self._get_environment_names(flatten(resources))
-        envs_text = f'{", ".join(apps_envs)} environment{"" if len(apps_envs) == 1 else "s"}'
-        return f'{len(resources)} {resource_type}{"" if len(resources) == 1 else "s"} in {envs_text}'
+        envs_text = f'<b>{"</b>, <b>".join(apps_envs)}</b> environment{"" if len(apps_envs) == 1 else "s"}'
+        return f'<b>{len(resources)}</b> {resource_type}{"" if len(resources) == 1 else "s"} in the {envs_text}'
 
     def _generate_developer_textual_report(self, user_resources: list[UserResources], developer_type: str) -> str:
         users_count = len(user_resources)
@@ -57,14 +57,14 @@ class AppDeveloperTextualReport:
             return ""
 
         textual_report = (
-            f'There are {apps_count + flows_count} different applications and flows '
-            f'owned by {users_count} different {developer_type} users. '
-            f'{total_disabled_count} {"is" if total_disabled_count == 1 else "are"} disabled '
-            f'and {total_active_count} {"is" if total_active_count == 1 else "are"} active.\n'
+            f'There are <b>{apps_count + flows_count}</b> different applications and flows '
+            f'owned by <b>{users_count}</b> different <b>{developer_type}</b> users. '
+            f'<b>{total_disabled_count}</b> {"is" if total_disabled_count == 1 else "are"} disabled '
+            f'and <b>{total_active_count}</b> {"is" if total_active_count == 1 else "are"} active.\n'
         )
 
         example_user = self._select_example_user(user_resources)
-        textual_report += f'For example, {example_user.user.fullname} from {extract_user_domain(example_user.user)} developed '
+        textual_report += f'For example, <b>{example_user.user.fullname}</b> from <b>{extract_user_domain(example_user.user)}</b> developed '
 
         if example_user.apps:
             textual_report += self._generate_env_text(example_user.apps, 'application')

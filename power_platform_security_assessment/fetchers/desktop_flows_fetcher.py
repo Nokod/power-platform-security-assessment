@@ -23,7 +23,7 @@ class DesktopFlowsFetcher(BaseResourceFetcher):
             'Authorization': f'Bearer {token}',
         })
 
-        desktop_flows = response_data.get('value', [])
+        desktop_flows = [DesktopFlow(**flow) for flow in response_data.get('value', [])]
         next_page = response_data.get('@odata.nextLink', None)
 
         return desktop_flows, next_page
