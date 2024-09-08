@@ -111,9 +111,18 @@ class ReportBuilder:
         data = self.get_components_per_env()
         df = pd.DataFrame(data)
         fig = go.Figure(data=[go.Table(
-            header=dict(values=list(df.columns),
-                        fill_color=self.TITLE_COLOR,
-                        align='left'),
+            header=dict(
+                values=[
+                    'Name',
+                    '<a href="https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/getting-started">Applications</a>',
+                    '<a href="https://learn.microsoft.com/en-us/power-automate/overview-cloud">Cloud Flows</a>',
+                    '<a href="https://learn.microsoft.com/en-us/power-automate/desktop-flows/introduction">Desktop Flows</a>',
+                    '<a href="https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/model-driven-app-overview">Model Driven Apps</a>',
+                    'Total'
+                ],
+                fill_color=self.TITLE_COLOR,
+                align='left'
+            ),
             cells=dict(values=[df['Name'], df['Applications'], df['Cloud Flows'], df['Desktop Flows'],
                                df['Model Driven Apps'], df['Total']],
                        fill_color=self.BACKGROUND_COLOR,
