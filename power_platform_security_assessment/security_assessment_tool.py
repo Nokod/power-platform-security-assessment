@@ -186,7 +186,7 @@ class SecurityAssessmentTool:
 
         report_builder = ReportBuilder(all_applications, all_cloud_flows, all_desktop_flows, all_model_driven_apps,
                                        all_users_list, all_connector_connections, environments_results,
-                                       failed_environments)
+                                       failed_environments, environments)
         report_builder.build_report(extra_textual_reports=[app_developers_report, connector_issues_report,
                                                            bypass_consent_report])
 

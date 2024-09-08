@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from jinja2 import Template
 
 from power_platform_security_assessment.base_classes import User, CloudFlow, Application, ModelDrivenApp, DesktopFlow, \
-    ConnectorWithConnections
+    ConnectorWithConnections, Environment
 from power_platform_security_assessment.consts import ComponentType
 from power_platform_security_assessment.security_features.common import is_app_disabled, is_flow_disabled, \
     is_model_driven_app_disabled, is_desktop_flow_disabled
@@ -25,13 +25,15 @@ class ReportBuilder:
 
     def __init__(self, applications: list[Application], cloud_flows: list[CloudFlow], desktop_flows: list[DesktopFlow],
                  model_driven_apps: list[ModelDrivenApp], users: list[User],
-                 connectors: list[ConnectorWithConnections], environments_results: list, failed_environments: list):
+                 connectors: list[ConnectorWithConnections], environments_results: list, failed_environments: list,
+                 environments: list[Environment]):
         self._applications = applications
         self._cloud_flows = cloud_flows
         self._desktop_flows = desktop_flows
         self._model_driven_apps = model_driven_apps
         self._users = users
         self._connectors = connectors
+        self._scanned_environments = environments
         self._environments_results = environments_results
         self._failed_environments = failed_environments
 
@@ -75,7 +77,7 @@ class ReportBuilder:
                         fill_color=self.TITLE_COLOR,
                         align='left'),
             cells=dict(values=[df['Name'], df['Type'], df['Created By'], df['Create Time'], df['Last Activity'],
-                               df['Status']],
+                               df['Scan Status']],
                        fill_color=self.BACKGROUND_COLOR,
                        line=dict(color='white'),
                        align='left'))],
@@ -84,24 +86,24 @@ class ReportBuilder:
 
     def get_scanned_environments(self):
         envs = []
-        for env in self._environments_results:
-            envs.append(self._create_env_data(env))
-
-        for env in self._failed_environments:
-            envs.append(self._create_env_data(env, failed=True))
+        for env in self._scanned_environments:
+            envs.append(self._create_env_data(
+                env=env,
+                failed=env.name in [env[ComponentType.ENVIRONMENT].name for env in self._failed_environments]
+            ))
 
         return envs
 
-    def _create_env_data(self, env, failed=False):
-        env_name = env[ComponentType.ENVIRONMENT].properties.displayName
-        created_by = env[ComponentType.ENVIRONMENT].properties.createdBy.get('displayName', 'N/A')
-        created_time = round_time_to_seconds(env[ComponentType.ENVIRONMENT].properties.createdTime)
-        last_activity = round_time_to_seconds(
-            env[ComponentType.ENVIRONMENT].properties.lastActivity.lastActivity.lastActivityTime)
-        env_type = env[ComponentType.ENVIRONMENT].properties.environmentSku
+    @staticmethod
+    def _create_env_data(env: Environment, failed=False):
+        env_name = env.properties.displayName
+        created_by = env.properties.createdBy.get('displayName', 'N/A')
+        created_time = round_time_to_seconds(env.properties.createdTime)
+        last_activity = round_time_to_seconds(env.properties.lastActivity.lastActivity.lastActivityTime)
+        env_type = env.properties.environmentSku
         status = 'Failed' if failed else 'Success'
         env_data = {'Name': env_name, 'Type': env_type, 'Created By': created_by, 'Create Time': created_time,
-                    'Last Activity': last_activity, 'Status': status}
+                    'Last Activity': last_activity, 'Scan Status': status}
         return env_data
 
     def _build_components_in_env(self):
