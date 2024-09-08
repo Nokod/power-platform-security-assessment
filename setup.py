@@ -8,7 +8,7 @@ with open('README.md') as f:
 
 setup(
     name='power-platform-security-assessment',
-    version='0.1.1',
+    version='0.1.2',
     description='Power Platform Security Assessment Tool',
     long_description=long_description,
     long_description_content_type='text/markdown',
