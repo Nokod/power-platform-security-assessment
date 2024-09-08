@@ -132,7 +132,15 @@ class ReportBuilder:
                      ComponentType.DESKTOP_FLOWS].count + env[ComponentType.MODEL_DRIVEN_APPS].count + env[
                               ComponentType.USERS].count
                  } for env in self._environments_results]
-        return sorted(data, key=lambda x: x['Total'], reverse=True)
+        rows = sorted(data, key=lambda x: x['Total'], reverse=True)
+        total_row = {'Name': '<b>Total</b>',
+                     'Applications': f'<b>{sum([row["Applications"] for row in rows])}</b>',
+                     'Cloud Flows': f'<b>{sum([row["Cloud Flows"] for row in rows])}</b>',
+                     'Desktop Flows': f'<b>{sum([row["Desktop Flows"] for row in rows])}</b>',
+                     'Model Driven Apps': f'<b>{sum([row["Model Driven Apps"] for row in rows])}</b>',
+                     'Total': f'<b>{sum([row["Total"] for row in rows])}</b>'}
+
+        return rows + [total_row]
 
     def _build_biggest_environments(self):
         envs = self._get_biggest_environments()
