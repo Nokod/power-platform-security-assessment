@@ -1,6 +1,20 @@
-# Power Platform Security Assessment Tool
+# PowerProbe
 
-An open source application that can be used locally to extract information from your Power Platform tenant and display compelling stats that hint at the size of the attack surface and severity of the threat.
+Open Source Risk Assessment Tool for Power Platform
+
+With citizen developers' widespread adoption of Microsoft Power Platform, security teams are challenged to evaluate the
+risks and vulnerabilities created by these business users.
+
+To assess your risk exposure, Nokod developed "PowerProbe", a lightweight, open-source assessment tool that you can
+easily run locally/on-premise.
+Its purpose is to provide a quick and informative view of your Power Platform
+environments - development and production - and help you understand the size of your attack surface and prominent
+security issues.
+Receive an easily shareable report with stats on your environments, components, and connectors and insights into
+vulnerabilities.
+
+If you need help with this tool, please contact us at support@nokodsecurity.com.
+
 
 ## Features
 
