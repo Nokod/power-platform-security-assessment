@@ -26,7 +26,7 @@ class ReportBuilder:
     def __init__(self, applications: list[Application], cloud_flows: list[CloudFlow], desktop_flows: list[DesktopFlow],
                  model_driven_apps: list[ModelDrivenApp], users: list[User],
                  connectors: list[ConnectorWithConnections], environments_results: list, failed_environments: list,
-                 environments: list[Environment]):
+                 environments: list[Environment], total_envs: int):
         self._applications = applications
         self._cloud_flows = cloud_flows
         self._desktop_flows = desktop_flows
@@ -36,6 +36,7 @@ class ReportBuilder:
         self._scanned_environments = environments
         self._environments_results = environments_results
         self._failed_environments = failed_environments
+        self._total_envs_count = total_envs
 
     def build_report(self, extra_textual_reports: list[str] = None):
         env_summary = [self._build_env_summary()]
@@ -65,8 +66,8 @@ class ReportBuilder:
         for i, env in enumerate(data):
             output.append(
                 f'Environment \'Env{i + 1}\' has {env["Applications"]} applications, {env["Cloud Flows"]} cloud '
-                f'flows, {env["Desktop Flows"]} desktop flows, {env["Model Driven Apps"]} model driven apps, '
-                f'and {env["Users"]} users. This totals to {env["Total"]} components.')
+                f'flows, {env["Desktop Flows"]} desktop flows, and {env["Model Driven Apps"]} model driven apps. '
+                f'This totals to {env["Total"]} components.')
         return "\\n".join(output)
 
     def _build_env_summary(self):
@@ -114,7 +115,7 @@ class ReportBuilder:
                         fill_color=self.TITLE_COLOR,
                         align='left'),
             cells=dict(values=[df['Name'], df['Applications'], df['Cloud Flows'], df['Desktop Flows'],
-                               df['Model Driven Apps'], df['Users'], df['Total']],
+                               df['Model Driven Apps'], df['Total']],
                        fill_color=self.BACKGROUND_COLOR,
                        align='left'))],
             layout={'title': 'Components per Environment', 'plot_bgcolor': self.BACKGROUND_COLOR,
@@ -127,7 +128,6 @@ class ReportBuilder:
                  'Cloud Flows': env[ComponentType.CLOUD_FLOWS].count,
                  'Desktop Flows': env[ComponentType.DESKTOP_FLOWS].count,
                  'Model Driven Apps': env[ComponentType.MODEL_DRIVEN_APPS].count,
-                 'Users': env[ComponentType.USERS].count,
                  'Total': env[ComponentType.APPLICATIONS].count + env[ComponentType.CLOUD_FLOWS].count + env[
                      ComponentType.DESKTOP_FLOWS].count + env[ComponentType.MODEL_DRIVEN_APPS].count + env[
                               ComponentType.USERS].count
@@ -196,7 +196,7 @@ class ReportBuilder:
                 cells=dict(values=[df['Environment Name'], df['Number of Connectors']],
                            fill_color=self.BACKGROUND_COLOR,
                            align='left'))],
-            layout={'title': 'Unique Connectors in Environments',
+            layout={'title': 'Connectors per environment',
                     'plot_bgcolor': self.BACKGROUND_COLOR, 'height': 450, 'margin': dict(l=0, r=0, t=50, b=0)})
         return fig.to_html(full_html=False, include_plotlyjs='cdn')
 
@@ -251,7 +251,7 @@ class ReportBuilder:
             ],
             layout={
                 'barmode': 'stack',
-                'title': 'Components in Scanned Environments',
+                'title': 'Total component per type',
                 'plot_bgcolor': self.BACKGROUND_COLOR,
             }
         )
@@ -263,12 +263,10 @@ class ReportBuilder:
         enabled_desktop_flows = len([flow for flow in self._desktop_flows if not is_desktop_flow_disabled(flow)])
         enabled_model_driven_apps = len(
             [app for app in self._model_driven_apps if not is_model_driven_app_disabled(app)])
-        enabled_users = len([user for user in self._users if not user.isdisabled])
         df = pd.DataFrame({
-            'Canvas Apps': [enabled_apps, len(self._applications) - enabled_apps],
+            'Applications': [enabled_apps, len(self._applications) - enabled_apps],
             'Cloud Flows': [enabled_cloud_flows, len(self._cloud_flows) - enabled_cloud_flows],
             'Desktop Flows': [enabled_desktop_flows, len(self._desktop_flows) - enabled_desktop_flows],
             'Model Driven Apps': [enabled_model_driven_apps, len(self._model_driven_apps) - enabled_model_driven_apps],
-            'Users': [enabled_users, len(self._users) - enabled_users],
         })
         return df

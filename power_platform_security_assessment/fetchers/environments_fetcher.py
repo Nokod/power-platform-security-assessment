@@ -15,9 +15,9 @@ class EnvironmentsFetcher:
         self.environments = []
 
     @staticmethod
-    def _display_environments(environments):
+    def _display_environments(environments: list[Environment], total_envs: int):
         max_display_name_length = max([len(env.properties.displayName) for env in environments])
-        print(f'Total number of environments: {len(environments)}')
+        print(f'Total number of environments: {total_envs}')
         print()
         print(
             f'{"ID":<44} {"Name":<{max_display_name_length}} {"Created By":<20} {"Create Time":<30} {"Last Activity":<30} {"Type":<10}')
@@ -64,7 +64,7 @@ class EnvironmentsFetcher:
         env2_created_time = parser.isoparse(env2.properties.createdTime).timestamp()
         return env1_created_time - env2_created_time
 
-    def fetch_environments(self, token) -> list[Environment]:
+    def fetch_environments(self, token) -> tuple[list[Environment], int]:
         environments = self._fetch_environments(token)
         total_envs = len(environments)
         self._notify_user(total_envs)
@@ -74,5 +74,5 @@ class EnvironmentsFetcher:
             .take(self._MAX_ENVIRONMENTS_TO_SCAN)
             .value()
         )
-        self._display_environments(selected_environments)
-        return selected_environments
+        self._display_environments(selected_environments, total_envs)
+        return selected_environments, total_envs
