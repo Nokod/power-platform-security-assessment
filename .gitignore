@@ -232,4 +232,4 @@ cython_debug/
 .idea/
 
 # Project output
-output.html
+power_platform_scan_report.html

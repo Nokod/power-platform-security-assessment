@@ -56,9 +56,9 @@ class ReportBuilder:
                                             user_reports=user_reports, top_3_reports=top_3_reports,
                                             security_issues=extra_textual_reports, email_body=email_body,
                                             failed_environments=failed_environments)
-        with open('output.html', 'w') as f:
+        with open('power_platform_scan_report.html', 'w') as f:
             f.write(rendered_template)
-            print(f'Report generated successfully. Output saved to {os.path.abspath("output.html")}')
+            print(f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
 
     def _build_email_body(self):
         data = self.get_components_per_env()
