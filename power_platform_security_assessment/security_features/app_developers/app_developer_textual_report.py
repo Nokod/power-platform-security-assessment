@@ -60,7 +60,7 @@ class AppDeveloperTextualReport:
             f'There are <b>{apps_count + flows_count}</b> different applications and flows '
             f'owned by <b>{users_count}</b> different <b>{developer_type}</b> users. '
             f'<b>{total_disabled_count}</b> {"is" if total_disabled_count == 1 else "are"} disabled '
-            f'and <b>{total_active_count}</b> {"is" if total_active_count == 1 else "are"} active.\n'
+            f'and <b>{total_active_count}</b> {"is" if total_active_count == 1 else "are"} active.<br>'
         )
 
         example_user = self._select_example_user(user_resources)
@@ -80,6 +80,6 @@ class AppDeveloperTextualReport:
         guest_developers_textual_report = self._generate_developer_textual_report(developers.guest_developers, 'guest')
         inactive_developers_textual_report = self._generate_developer_textual_report(developers.inactive_developers, 'deleted')
         return (
-            f'{guest_developers_textual_report}\n'
-            f'{inactive_developers_textual_report}\n'
+            f'{guest_developers_textual_report}<br>'
+            f'{inactive_developers_textual_report}'
         )
