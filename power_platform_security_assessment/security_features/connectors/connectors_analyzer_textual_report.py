@@ -30,9 +30,9 @@ class ConnectorsAnalyzerTextualReport:
         example_connector = self._select_example_connector(connectors)
         example_connector_connections_count = len(example_connector.connections)
         textual_report += (
-            f'For example, the connector <b>{example_connector.connector.properties.displayName}</b> is <b>{connector_type}</b>, and '
+            f'<br>For example, the connector <b>{example_connector.connector.properties.displayName}</b> is <b>{connector_type}</b>, and '
             f'<b>{example_connector_connections_count}</b> connection instance{"" if example_connector_connections_count == 1 else "s"} '
-            f'{"is" if example_connector_connections_count == 1 else "are"} found in your organization.\n'
+            f'{"is" if example_connector_connections_count == 1 else "are"} found in your organization.<br>'
         )
 
         return textual_report

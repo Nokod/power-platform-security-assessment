@@ -60,11 +60,11 @@ class AppDeveloperTextualReport:
             f'There are <b>{apps_count + flows_count}</b> different applications and flows '
             f'owned by <b>{users_count}</b> different <b>{developer_type}</b> users. '
             f'<b>{total_disabled_count}</b> {"is" if total_disabled_count == 1 else "are"} disabled '
-            f'and <b>{total_active_count}</b> {"is" if total_active_count == 1 else "are"} active.\n'
+            f'and <b>{total_active_count}</b> {"is" if total_active_count == 1 else "are"} active.'
         )
 
         example_user = self._select_example_user(user_resources)
-        textual_report += f'For example, <b>{example_user.user.fullname}</b> from <b>{extract_user_domain(example_user.user)}</b> developed '
+        textual_report += f'<br>For example, <b>{example_user.user.fullname}</b> from <b>{extract_user_domain(example_user.user)}</b> developed '
 
         if example_user.apps:
             textual_report += self._generate_env_text(example_user.apps, 'application')
@@ -74,12 +74,12 @@ class AppDeveloperTextualReport:
                 textual_report += ' and '  # Add "and" only if there are apps
             textual_report += self._generate_env_text(example_user.flows, 'flow')
 
-        return textual_report
+        return textual_report + '<br>'
 
     def generate_textual_report(self, developers: Developers) -> str:
         guest_developers_textual_report = self._generate_developer_textual_report(developers.guest_developers, 'guest')
         inactive_developers_textual_report = self._generate_developer_textual_report(developers.inactive_developers, 'deleted')
         return (
-            f'{guest_developers_textual_report}\n'
-            f'{inactive_developers_textual_report}\n'
+            f'{guest_developers_textual_report}'
+            f'{inactive_developers_textual_report}'
         )

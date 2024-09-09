@@ -7,7 +7,7 @@
             width: 1200px;
             padding: 10px;
             border: 5px;
-            margin-left: 150px;
+            margin-left: 125px;
             margin-right: auto;
             margin-bottom: 20px;
             border-radius: 20px;
@@ -42,6 +42,16 @@
         li {
             margin: 15px 0;
         }
+        .note {
+            margin-left: 50px;
+            font-size: large;
+        }
+        .small_title {
+            font-size: x-large;
+            font-weight: 1000px;
+            margin-bottom: 10px;
+            margin-top: 25px;
+        }
     </style>
 </head>
 <body class="main">
@@ -73,6 +83,7 @@
             {% endfor %}
         </div>
         <div class="title">Users</div>
+        <div class="note">Total: {{ total_users }}</div>
         <div class="display">
             {% for report in user_reports %}
             {{ report }}
@@ -85,22 +96,45 @@
             {% endfor %}
         </div>
     </div>
-    <div class="title">Security Issues</div>
+    <div class="title">Risk Samples</div>
     <div class="extra_text_box">
-        <ul>
-            {% for issue in security_issues %}
-            <li>{{ issue }}</li>
-            {% endfor %}
-        </ul>
+        {% if app_developers_report %}
+        <div class="small_title">Deleted Users and Guest Users that Developed an App</div>
+        <div class="note">
+            {{ app_developers_report }}
+        </div>
+        {% endif %}
+
+        {% if connectors_report %}
+        <div class="small_title">Untrusted and deprecated connectors</div>
+        <div class="note">
+            {{ connectors_report }}
+        </div>
+        {% endif %}
+
+        {% if bypass_consent_report %}
+        <div class="small_title">Bypass Consent</div>
+        <div class="note">
+            {{ bypass_consent_report }}
+        </div>
+        {% endif %}
+
+        <div class="extra_text_box">
+            <ul>
+                {% for issue in security_issues %}
+                <li>{{ issue }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <button class="button" onclick="openGmail()">Want to share your data anonymously? Click to preview email
+        </button>
+        <div class="extra_text_box">
+            <p>Failed to scan the following environments due to insufficient permissions:</p>
+            <ul>
+                {% for environment in failed_environments %}
+                <li>{{ environment }}</li>
+                {% endfor %}
+        </div>
     </div>
-    <button class="button" onclick="openGmail()">Want to share your data anonymously? Click to preview email</button>
-    <div class="extra_text_box">
-        <p>Failed to scan the following environments due to insufficient permissions:</p>
-        <ul>
-            {% for environment in failed_environments %}
-            <li>{{ environment }}</li>
-            {% endfor %}
-    </div>
-</div>
 </body>
 </html>

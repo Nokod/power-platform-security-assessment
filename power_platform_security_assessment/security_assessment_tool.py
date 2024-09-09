@@ -187,8 +187,7 @@ class SecurityAssessmentTool:
         report_builder = ReportBuilder(all_applications, all_cloud_flows, all_desktop_flows, all_model_driven_apps,
                                        all_users_list, all_connector_connections, environments_results,
                                        failed_environments)
-        report_builder.build_report(extra_textual_reports=[app_developers_report, connector_issues_report,
-                                                           bypass_consent_report])
+        report_builder.build_report(app_developers_report, connector_issues_report, bypass_consent_report)
 
     def fetch_resources(self, environments_results):
         all_users_list = self._handle_environment_users(environments_results)
