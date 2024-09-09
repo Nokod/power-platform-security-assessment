@@ -49,6 +49,7 @@ class ReportBuilder:
                                self._failed_environments]
         __location__ = os.path.realpath(
             os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
         with open(os.path.join(__location__, 'report.html')) as f:
             template = Template(f.read())
 
@@ -58,7 +59,7 @@ class ReportBuilder:
                                             connectors_report=connectors_report,
                                             bypass_consent_report=bypass_consent_report, top_3_reports=top_3_reports,
                                             email_body=email_body, failed_environments=failed_environments)
-        with open('output.html', 'w') as f:
+        with open('power_platform_scan_report.html', 'w') as f:
             f.write(rendered_template)
             print(f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
 

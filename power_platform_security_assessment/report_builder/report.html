@@ -100,32 +100,24 @@
     <div class="extra_text_box">
         {% if app_developers_report %}
         <div class="small_title">Deleted Users and Guest Users that Developed an App</div>
-        <div class="note">
+        <div class="sample">
             {{ app_developers_report }}
         </div>
         {% endif %}
 
         {% if connectors_report %}
         <div class="small_title">Untrusted and deprecated connectors</div>
-        <div class="note">
+        <div class="sample">
             {{ connectors_report }}
         </div>
         {% endif %}
 
         {% if bypass_consent_report %}
         <div class="small_title">Bypass Consent</div>
-        <div class="note">
+        <div class="sample">
             {{ bypass_consent_report }}
         </div>
         {% endif %}
-
-        <div class="extra_text_box">
-            <ul>
-                {% for issue in security_issues %}
-                <li>{{ issue }}</li>
-                {% endfor %}
-            </ul>
-        </div>
         <button class="button" onclick="openGmail()">Want to share your data anonymously? Click to preview email
         </button>
         <div class="extra_text_box">
@@ -134,6 +126,7 @@
                 {% for environment in failed_environments %}
                 <li>{{ environment }}</li>
                 {% endfor %}
+            </ul>
         </div>
     </div>
 </body>
