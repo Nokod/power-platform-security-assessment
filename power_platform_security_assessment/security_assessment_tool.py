@@ -20,9 +20,7 @@ from power_platform_security_assessment.token_manager import TokenManager
 
 
 class SecurityAssessmentTool:
-    def __init__(self, assessment_tool_name, assessment_tool_version):
-        self.assessment_tool_name = assessment_tool_name
-        self.assessment_tool_version = assessment_tool_version
+    def __init__(self):
         self._access_token = None
         self._refresh_token = None
         self._client_id = None
@@ -172,7 +170,7 @@ class SecurityAssessmentTool:
         bypass_consent_result = bypass_consent_analyzer.analyze()
         return bypass_consent_result.textual_report
 
-    def _handle_results(self, environments_results: list, failed_environments: list, environments: list[Environment]):
+    def _handle_results(self, environments_results: list, failed_environments: list, environments: list[Environment], total_envs: int):
         (all_applications, all_cloud_flows, all_connector_connections, all_desktop_flows, all_model_driven_apps,
          all_users_list) = self.fetch_resources(environments_results)
 
@@ -186,7 +184,7 @@ class SecurityAssessmentTool:
 
         report_builder = ReportBuilder(all_applications, all_cloud_flows, all_desktop_flows, all_model_driven_apps,
                                        all_users_list, all_connector_connections, environments_results,
-                                       failed_environments)
+                                       failed_environments, environments, total_envs)
         report_builder.build_report(extra_textual_reports=[app_developers_report, connector_issues_report,
                                                            bypass_consent_report])
 
@@ -206,7 +204,7 @@ class SecurityAssessmentTool:
     def run_security_assessment(self):
         print('Started scanning environments...')
         self._create_token()
-        environments = EnvironmentsFetcher().fetch_environments(self._access_token)
+        environments, total_envs = EnvironmentsFetcher().fetch_environments(self._access_token)
         token_manager = TokenManager(self._client_id, self._refresh_token)
         environments_results = []
         failed_environments = []
@@ -227,11 +225,11 @@ class SecurityAssessmentTool:
                     finally:
                         bar()
 
-        self._handle_results(environments_results, failed_environments, environments)
+        self._handle_results(environments_results, failed_environments, environments, total_envs)
 
 
 def main():
-    security_assessment_tool = SecurityAssessmentTool("Security Assessment Tool", "1.0")
+    security_assessment_tool = SecurityAssessmentTool()
     security_assessment_tool.run_security_assessment()
 
 

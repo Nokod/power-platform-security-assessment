@@ -10,9 +10,9 @@ class BypassConsentTextualReport:
 
         textual_report = (
             f'There {verb} <b>{len(bypass_consent_apps)}</b> application{"" if len(bypass_consent_apps) == 1 else "s"} '
-            f'that {has_or_have} the <b>"Bypass Consent"</b> feature enabled.\n'
+            f'that {has_or_have} the <b>"Bypass Consent"</b> feature enabled.<br>'
             f'This feature allows the application owner to access or change information on behalf of '
-            f'the application users, without their consent.\n'
+            f'the application users, without their consent.'
         )
 
         return textual_report
