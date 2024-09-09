@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from jinja2 import Template
 
 from power_platform_security_assessment.base_classes import User, CloudFlow, Application, ModelDrivenApp, DesktopFlow, \
-    ConnectorWithConnections
+    ConnectorWithConnections, Environment
 from power_platform_security_assessment.consts import ComponentType
 from power_platform_security_assessment.security_features.common import is_app_disabled, is_flow_disabled, \
     is_model_driven_app_disabled, is_desktop_flow_disabled
@@ -25,15 +25,18 @@ class ReportBuilder:
 
     def __init__(self, applications: list[Application], cloud_flows: list[CloudFlow], desktop_flows: list[DesktopFlow],
                  model_driven_apps: list[ModelDrivenApp], users: list[User],
-                 connectors: list[ConnectorWithConnections], environments_results: list, failed_environments: list):
+                 connectors: list[ConnectorWithConnections], environments_results: list, failed_environments: list,
+                 environments: list[Environment], total_envs: int):
         self._applications = applications
         self._cloud_flows = cloud_flows
         self._desktop_flows = desktop_flows
         self._model_driven_apps = model_driven_apps
         self._users = users
         self._connectors = connectors
+        self._scanned_environments = environments
         self._environments_results = environments_results
         self._failed_environments = failed_environments
+        self._total_envs_count = total_envs
 
     def build_report(self, app_developers_report, bypass_consent_report, connectors_report):
         env_summary = [self._build_env_summary()]
@@ -57,7 +60,7 @@ class ReportBuilder:
                                             email_body=email_body, failed_environments=failed_environments)
         with open('output.html', 'w') as f:
             f.write(rendered_template)
-            print(f'Report generated successfully. Output saved to {os.path.abspath("output.html")}')
+            print(f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
 
     def _build_email_body(self):
         data = self.get_components_per_env()
@@ -65,8 +68,8 @@ class ReportBuilder:
         for i, env in enumerate(data):
             output.append(
                 f'Environment \'Env{i + 1}\' has {env["Applications"]} applications, {env["Cloud Flows"]} cloud '
-                f'flows, {env["Desktop Flows"]} desktop flows, {env["Model Driven Apps"]} model driven apps, '
-                f'and {env["Users"]} users. This totals to {env["Total"]} components.')
+                f'flows, {env["Desktop Flows"]} desktop flows, and {env["Model Driven Apps"]} model driven apps. '
+                f'This totals to {env["Total"]} components.')
         return "\\n".join(output)
 
     def _build_env_summary(self):
@@ -77,7 +80,7 @@ class ReportBuilder:
                         fill_color=self.TITLE_COLOR,
                         align='left'),
             cells=dict(values=[df['Name'], df['Type'], df['Created By'], df['Create Time'], df['Last Activity'],
-                               df['Status']],
+                               df['Scan Status']],
                        fill_color=self.BACKGROUND_COLOR,
                        line=dict(color='white'),
                        align='left'))],
@@ -88,36 +91,44 @@ class ReportBuilder:
 
     def get_scanned_environments(self):
         envs = []
-        for env in self._environments_results:
-            envs.append(self._create_env_data(env))
-
-        for env in self._failed_environments:
-            envs.append(self._create_env_data(env, failed=True))
+        for env in self._scanned_environments:
+            envs.append(self._create_env_data(
+                env=env,
+                failed=env.name in [env[ComponentType.ENVIRONMENT].name for env in self._failed_environments]
+            ))
 
         return envs
 
     @staticmethod
-    def _create_env_data(env, failed=False):
-        env_name = env[ComponentType.ENVIRONMENT].properties.displayName
-        created_by = env[ComponentType.ENVIRONMENT].properties.createdBy.get('displayName', 'N/A')
-        created_time = round_time_to_seconds(env[ComponentType.ENVIRONMENT].properties.createdTime)
-        last_activity = round_time_to_seconds(
-            env[ComponentType.ENVIRONMENT].properties.lastActivity.lastActivity.lastActivityTime)
-        env_type = env[ComponentType.ENVIRONMENT].properties.environmentSku
+    def _create_env_data(env: Environment, failed=False):
+        env_name = env.properties.displayName
+        created_by = env.properties.createdBy.get('displayName', 'N/A')
+        created_time = round_time_to_seconds(env.properties.createdTime)
+        last_activity = round_time_to_seconds(env.properties.lastActivity.lastActivity.lastActivityTime)
+        env_type = env.properties.environmentSku
         status = 'Failed' if failed else 'Success'
         env_data = {'Name': env_name, 'Type': env_type, 'Created By': created_by, 'Create Time': created_time,
-                    'Last Activity': last_activity, 'Status': status}
+                    'Last Activity': last_activity, 'Scan Status': status}
         return env_data
 
     def _build_components_in_env(self):
         data = self.get_components_per_env()
         df = pd.DataFrame(data)
         fig = go.Figure(data=[go.Table(
-            header=dict(values=list(df.columns),
-                        fill_color=self.TITLE_COLOR,
-                        align='left'),
+            header=dict(
+                values=[
+                    'Name',
+                    '<a href="https://learn.microsoft.com/en-us/power-apps/maker/canvas-apps/getting-started">Applications</a>',
+                    '<a href="https://learn.microsoft.com/en-us/power-automate/overview-cloud">Cloud Flows</a>',
+                    '<a href="https://learn.microsoft.com/en-us/power-automate/desktop-flows/introduction">Desktop Flows</a>',
+                    '<a href="https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/model-driven-app-overview">Model Driven Apps</a>',
+                    'Total'
+                ],
+                fill_color=self.TITLE_COLOR,
+                align='left'
+            ),
             cells=dict(values=[df['Name'], df['Applications'], df['Cloud Flows'], df['Desktop Flows'],
-                               df['Model Driven Apps'], df['Users'], df['Total']],
+                               df['Model Driven Apps'], df['Total']],
                        fill_color=self.BACKGROUND_COLOR,
                        align='left'))],
             layout={'title': 'Components per Environment', 'plot_bgcolor': self.BACKGROUND_COLOR,
@@ -131,12 +142,19 @@ class ReportBuilder:
                  'Cloud Flows': env[ComponentType.CLOUD_FLOWS].count,
                  'Desktop Flows': env[ComponentType.DESKTOP_FLOWS].count,
                  'Model Driven Apps': env[ComponentType.MODEL_DRIVEN_APPS].count,
-                 'Users': env[ComponentType.USERS].count,
                  'Total': env[ComponentType.APPLICATIONS].count + env[ComponentType.CLOUD_FLOWS].count + env[
                      ComponentType.DESKTOP_FLOWS].count + env[ComponentType.MODEL_DRIVEN_APPS].count + env[
                               ComponentType.USERS].count
                  } for env in self._environments_results]
-        return sorted(data, key=lambda x: x['Total'], reverse=True)
+        rows = sorted(data, key=lambda x: x['Total'], reverse=True)
+        total_row = {'Name': '<b>Total</b>',
+                     'Applications': f'<b>{sum([row["Applications"] for row in rows])}</b>',
+                     'Cloud Flows': f'<b>{sum([row["Cloud Flows"] for row in rows])}</b>',
+                     'Desktop Flows': f'<b>{sum([row["Desktop Flows"] for row in rows])}</b>',
+                     'Model Driven Apps': f'<b>{sum([row["Model Driven Apps"] for row in rows])}</b>',
+                     'Total': f'<b>{sum([row["Total"] for row in rows])}</b>'}
+
+        return rows + [total_row]
 
     def _build_biggest_environments(self):
         envs = self._get_biggest_environments()
@@ -206,7 +224,7 @@ class ReportBuilder:
                 cells=dict(values=[df['Environment Name'], df['Number of Connectors']],
                            fill_color=self.BACKGROUND_COLOR,
                            align='left'))],
-            layout={'title': 'Unique Connectors in Environments',
+            layout={'title': 'Connectors per environment',
                     'plot_bgcolor': self.BACKGROUND_COLOR, 'height': 450, 'margin': dict(l=0, r=0, t=50, b=0)})
         config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
         return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
@@ -264,7 +282,7 @@ class ReportBuilder:
             ],
             layout={
                 'barmode': 'stack',
-                'title': 'Components in Scanned Environments',
+                'title': 'Total component per type',
                 'plot_bgcolor': self.BACKGROUND_COLOR,
             }
         )
@@ -277,12 +295,10 @@ class ReportBuilder:
         enabled_desktop_flows = len([flow for flow in self._desktop_flows if not is_desktop_flow_disabled(flow)])
         enabled_model_driven_apps = len(
             [app for app in self._model_driven_apps if not is_model_driven_app_disabled(app)])
-        enabled_users = len([user for user in self._users if not user.isdisabled])
         df = pd.DataFrame({
-            'Canvas Apps': [enabled_apps, len(self._applications) - enabled_apps],
+            'Applications': [enabled_apps, len(self._applications) - enabled_apps],
             'Cloud Flows': [enabled_cloud_flows, len(self._cloud_flows) - enabled_cloud_flows],
             'Desktop Flows': [enabled_desktop_flows, len(self._desktop_flows) - enabled_desktop_flows],
             'Model Driven Apps': [enabled_model_driven_apps, len(self._model_driven_apps) - enabled_model_driven_apps],
-            'Users': [enabled_users, len(self._users) - enabled_users],
         })
         return df
