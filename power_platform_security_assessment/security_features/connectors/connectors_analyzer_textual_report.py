@@ -24,15 +24,15 @@ class ConnectorsAnalyzerTextualReport:
             f'There {"is" if connectors_count == 1 else "are"} <b>{connectors_count} {connector_type}</b> connector{"" if connectors_count == 1 else "s"} '
             f'in {environments_count} environment{"" if environments_count == 1 else "s"}. '
             f'{"This" if connectors_count == 1 else "These"} connector{"" if connectors_count == 1 else "s"} '
-            f'hold{"s" if connectors_count == 1 else ""} <b>{connections_count}</b> connection instance{"" if connections_count == 1 else "s"}.<br>'
+            f'hold{"s" if connectors_count == 1 else ""} <b>{connections_count}</b> connection instance{"" if connections_count == 1 else "s"}.\n'
         )
 
         example_connector = self._select_example_connector(connectors)
         example_connector_connections_count = len(example_connector.connections)
         textual_report += (
-            f'For example, the connector <b>{example_connector.connector.properties.displayName}</b> is <b>{connector_type}</b>, and '
+            f'<br>For example, the connector <b>{example_connector.connector.properties.displayName}</b> is <b>{connector_type}</b>, and '
             f'<b>{example_connector_connections_count}</b> connection instance{"" if example_connector_connections_count == 1 else "s"} '
-            f'{"is" if example_connector_connections_count == 1 else "are"} found in your organization.'
+            f'{"is" if example_connector_connections_count == 1 else "are"} found in your organization.<br>'
         )
 
         return textual_report
@@ -41,6 +41,6 @@ class ConnectorsAnalyzerTextualReport:
         deprecated_connectors_text = self._generate_textual_report_for_type(connectors_info.deprecated_connectors, "deprecated")
         untrusted_connectors_text = self._generate_textual_report_for_type(connectors_info.untrusted_connectors, "untrusted")
         return (
-            f'{deprecated_connectors_text}<br>'
-            f'{untrusted_connectors_text}'
+            f'{deprecated_connectors_text}\n'
+            f'{untrusted_connectors_text}\n'
         )

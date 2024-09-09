@@ -38,7 +38,7 @@ class ReportBuilder:
         self._failed_environments = failed_environments
         self._total_envs_count = total_envs
 
-    def build_report(self, extra_textual_reports: list[str] = None):
+    def build_report(self, app_developers_report, bypass_consent_report, connectors_report):
         env_summary = [self._build_env_summary()]
         environment_reports = [self._build_bar_chart_summary(), self._build_components_in_env(),
                                self._build_connectors_in_env()]
@@ -49,13 +49,16 @@ class ReportBuilder:
                                self._failed_environments]
         __location__ = os.path.realpath(
             os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
         with open(os.path.join(__location__, 'report.html')) as f:
             template = Template(f.read())
 
         rendered_template = template.render(found_environments=env_summary, environment_reports=environment_reports,
-                                            user_reports=user_reports, top_3_reports=top_3_reports,
-                                            security_issues=extra_textual_reports, email_body=email_body,
-                                            failed_environments=failed_environments)
+                                            total_users=len(self._users), user_reports=user_reports,
+                                            app_developers_report=app_developers_report,
+                                            connectors_report=connectors_report,
+                                            bypass_consent_report=bypass_consent_report, top_3_reports=top_3_reports,
+                                            email_body=email_body, failed_environments=failed_environments)
         with open('power_platform_scan_report.html', 'w') as f:
             f.write(rendered_template)
             print(f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
@@ -83,7 +86,9 @@ class ReportBuilder:
                        line=dict(color='white'),
                        align='left'))],
             layout={'plot_bgcolor': self.BACKGROUND_COLOR, 'width': 1400, 'margin': dict(l=0, r=0, t=50, b=0)})
-        return fig.to_html(full_html=False, include_plotlyjs='cdn')
+
+        config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
 
     def get_scanned_environments(self):
         envs = []
@@ -129,7 +134,8 @@ class ReportBuilder:
                        align='left'))],
             layout={'title': 'Components per Environment', 'plot_bgcolor': self.BACKGROUND_COLOR,
                     'margin': dict(l=0, r=0, t=50, b=0)})
-        return fig.to_html(full_html=False, include_plotlyjs='cdn')
+        config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
 
     def get_components_per_env(self):
         data = [{'Name': env[ComponentType.ENVIRONMENT].properties.displayName,
@@ -158,11 +164,15 @@ class ReportBuilder:
             header=dict(values=list(df.columns),
                         fill_color=self.TITLE_COLOR,
                         align='left'),
-            cells=dict(values=[df['Environment Name'], df['Type'], df['Total Components'], df['Developers']],
+            cells=dict(values=[df['Environment Name'], df['Type'], df['Total Components'], df['Developers *']],
                        fill_color=self.BACKGROUND_COLOR,
                        align='left'))],
-            layout={'title': 'Top 3 Biggest Environments', 'height': 300})
-        return fig.to_html(full_html=False, include_plotlyjs='cdn')
+            layout={'title': 'Top 3 Biggest Environments', 'height': 300, 'annotations': [
+                go.layout.Annotation(x=1, y=-0.15, showarrow=False, xanchor='right', yanchor='bottom',
+                                     text='* - Developers are users who own at least one application in the '
+                                          'environment')]})
+        config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
 
     def _get_biggest_environments(self):
         envs = []
@@ -174,7 +184,7 @@ class ReportBuilder:
             users_count = env[ComponentType.USERS].count
             total_components = apps_count + flows_count + connections_count + users_count
             envs.append({'Environment Name': env_name, 'Type': env[ComponentType.ENVIRONMENT].properties.environmentSku,
-                         'Total Components': total_components, 'Developers': get_environment_developers_count(env)})
+                         'Total Components': total_components, 'Developers *': get_environment_developers_count(env)})
         envs = sorted(envs, key=lambda x: x['Total Components'], reverse=True)
         return envs
 
@@ -190,7 +200,9 @@ class ReportBuilder:
                        fill_color=self.BACKGROUND_COLOR,
                        align='left'))],
             layout={'title': 'Top 3 Most Used Connectors', 'height': 300})
-        return fig.to_html(full_html=False, include_plotlyjs='cdn')
+
+        config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
 
     def _get_used_connections(self):
         connectors = []
@@ -215,7 +227,8 @@ class ReportBuilder:
                            align='left'))],
             layout={'title': 'Connectors per environment',
                     'plot_bgcolor': self.BACKGROUND_COLOR, 'height': 450, 'margin': dict(l=0, r=0, t=50, b=0)})
-        return fig.to_html(full_html=False, include_plotlyjs='cdn')
+        config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
 
     def _get_connectors_in_env_data(self):
         data = [{'Environment Name': env[ComponentType.ENVIRONMENT].properties.displayName, 'Number of Connectors': len(
@@ -235,12 +248,14 @@ class ReportBuilder:
                          marker=dict(colors=[self.MAIN_GREEN, self.MAIN_RED]))],
             layout={'title': 'Enabled vs Disabled Users', 'height': 300, 'width': 350})
         fig3 = go.Figure(
-            data=[go.Pie(labels=df3['Type'], values=df3['Count'], name='Azure State Users',
-                         marker=dict(colors=[self.VULN_COLOR, self.GOVERNANCE_COLOR, self.MALICIOUS_COLOR]))],
-            layout={'title': 'Azure State Users', 'height': 300, 'width': 350})
-        return (fig1.to_html(full_html=False, include_plotlyjs='cdn')
-                + fig2.to_html(full_html=False, include_plotlyjs='cdn')
-                + fig3.to_html(full_html=False, include_plotlyjs='cdn'))
+            data=[go.Pie(labels=df3['Type'], values=df3['Count'], name='Users in Active Directory',
+                         marker=dict(colors=[self.MAIN_GREEN, self.GOVERNANCE_COLOR, self.MALICIOUS_COLOR]))],
+            layout={'title': 'Users in Active Directory', 'height': 300, 'width': 350})
+        config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
+
+        return (fig1.to_html(full_html=False, include_plotlyjs='cdn', config=config)
+                + fig2.to_html(full_html=False, include_plotlyjs='cdn', config=config)
+                + fig3.to_html(full_html=False, include_plotlyjs='cdn', config=config))
 
     def _get_pie_charts(self):
         guest_users = len([user for user in self._users if user.domainname.find('#EXT#') != -1])
@@ -252,7 +267,7 @@ class ReportBuilder:
         df1 = pd.DataFrame(
             {'Type': ['Internal Users', 'Guest Users'], 'Count': [len(self._users) - guest_users, guest_users]})
         df2 = pd.DataFrame({'Type': ['Enabled Users', 'Disabled Users'], 'Count': [enabled_users, disabled_users]})
-        df3 = pd.DataFrame({'Type': ['Active (0)', 'AD soft delete (1)', 'AD hard delete (2)'],
+        df3 = pd.DataFrame({'Type': ['Active', 'AD soft delete', 'AD hard delete'],
                             'Count': [azure_state_0, azure_state_1, azure_state_2]})
         return df1, df2, df3
 
@@ -272,7 +287,8 @@ class ReportBuilder:
                 'plot_bgcolor': self.BACKGROUND_COLOR,
             }
         )
-        return fig.to_html(full_html=False, include_plotlyjs='cdn')
+        config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
+        return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
 
     def _get_bar_chart_data(self):
         enabled_apps = len([app for app in self._applications if not is_app_disabled(app)])
