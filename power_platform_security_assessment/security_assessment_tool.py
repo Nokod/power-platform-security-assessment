@@ -20,9 +20,7 @@ from power_platform_security_assessment.token_manager import TokenManager
 
 
 class SecurityAssessmentTool:
-    def __init__(self, assessment_tool_name, assessment_tool_version):
-        self.assessment_tool_name = assessment_tool_name
-        self.assessment_tool_version = assessment_tool_version
+    def __init__(self):
         self._access_token = None
         self._refresh_token = None
         self._client_id = None
@@ -231,7 +229,7 @@ class SecurityAssessmentTool:
 
 
 def main():
-    security_assessment_tool = SecurityAssessmentTool("Security Assessment Tool", "1.0")
+    security_assessment_tool = SecurityAssessmentTool()
     security_assessment_tool.run_security_assessment()
 
 
