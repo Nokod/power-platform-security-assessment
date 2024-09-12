@@ -1,0 +1,302 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Power Platform Security Assessment Report</title>
+    <style>
+        .extra_text_box {
+            width: 1200px;
+            padding: 10px;
+            border: 5px;
+            margin-left: 125px;
+            margin-right: auto;
+            margin-bottom: 20px;
+            border-radius: 20px;
+        }
+        .display {
+            display: flex; justify-content: space-around; flex-direction: row; flex-wrap: wrap;
+        }
+        .main {
+            font-family: 'Open Sans', Helvetica, Arial, sans-serif !important;
+        }
+        .title {
+            font-size: xx-large;
+            font-weight: 1000px;
+            margin-bottom: 10px;
+            margin-left: 50px;
+            color: #2888A4;
+            text-align: center;
+        }
+        .H1 {
+            font-size: 32px;
+            font-weight: 1000px;
+            margin-bottom: 50px;
+			margin-top: 10px;
+            margin-left: 10px;
+			text-align: center;
+			color: #ffffff
+        }
+		.footer
+		{
+            font-size: 18px;
+            font-weight: 300px;
+            margin-bottom: 50px;
+			margin-top: 10px;
+            margin-left: 10px;
+			text-align: left;
+			color: #ffffff
+        }
+		.H2 {
+            font-size: 32px;
+            font-weight: 300;
+            margin-bottom: 30px;
+			margin-top: 50px;
+            margin-left: 50px;
+			text-align: center;
+			color:#2888A4;
+        }
+		.H3 {
+            font-size: 32px;
+            font-weight: 300;
+            margin-bottom: 30px;
+			margin-top: 50px;
+            margin-left: 50px;
+			text-align: center;
+			color:#495b69;
+        }
+        .button {
+            background-color: #f9a14d;
+            border: none;
+            color: #ffffff;
+            padding: 16px 28px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 18px;
+            margin: 4px 2px;
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            position: relative;
+            left: 50%;
+			border-radius: 30px;
+        }
+         .sample {
+            margin-right: 50px;
+            margin-bottom: 20px;
+            border: 5px;
+            padding-bottom: 10px;
+            border-radius: 20px;
+            color: #2a343c;
+            line-height: 1.4em;
+        }
+        li {
+            margin: 15px 0;
+        }
+        a:link {
+            color: white;
+            background-color: transparent;
+            text-decoration: none;
+		}
+		a:visited {
+            color: #f9a14d;
+            background-color: transparent;
+            text-decoration: none;
+		}
+		a:hover {
+            color: #f9a14d;
+            background-color: transparent;
+            text-decoration: underline;
+		}
+        .note {
+            margin-left: 50px;
+            font-size: large;
+            text-align: center;
+            color: #2A3F5F;
+        }
+        .small_title {
+            font-size: 22px;
+            font-weight: 400;
+            margin-bottom: 10px;
+            margin-top: 25px;
+            color: #2888A4;
+        }
+        h2 {
+            font-size: 32px;
+            font-weight: 300;
+            margin-bottom: 30px;
+            margin-top: 50px;
+            margin-left: 50px;
+            text-align: center;
+            color: #2888A4;
+        }
+    </style>
+</head>
+<body class="main">
+<div>
+    <script type="text/javascript">
+        window.PlotlyConfig = {MathJaxConfig: 'local'};
+            function openGmail() {
+        const subject = encodeURIComponent("Power Platform Security Assessment Report Summary");
+        const body = encodeURIComponent("{{ email_body }}");
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=support@nokodsecurity.com&su=${subject}&body=${body}`;
+        window.open(gmailUrl, '_blank');
+    }
+    </script>
+</div>
+
+<div>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tbody>
+        <tr>
+            <td align="center" valign="top" background="#2888A4" bgcolor="#2888A4"
+                style="background: #2888A4 ; background-size: cover; padding: 50px 15px 0 15px;" class="mobile-padding">
+                <table class="w100p" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                    <tr>
+                        <td align="center" valign="top" style="padding: 0 0 20px 0;">
+                            <a href="https://nokodsecurity.com/?utm_source=powersat&utm_medium=link&utm_content=logo"><img
+                                    src="https://nokodsecurity.com/wp-content/uploads/2024/02/Nokod_white_horizontal.png"
+                                    width="240" height="" border="0" style="display: block;"></a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="h1">POWER PLATFORM SECURITY ASSESSMENT REPORT</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="color: #ffffff; text-align: center; margin-bottom: 20px;">
+                                <p>{{ report_date }}</p>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <div>
+        <div class="h2">Scanned Environments</div>
+        <div class="display">
+            {% for report in found_environments %}
+            {{ report }}
+            {% endfor %}
+        </div>
+        <div class="h2">Environments</div>
+        <div class="display">
+            {% for report in environment_reports %}
+            {{ report }}
+            {% endfor %}
+        </div>
+        <div class="h2">Users</div>
+        <div class="note">Total Users: {{ total_users }}</div>
+        <div class="display">
+            {% for report in user_reports %}
+            {{ report }}
+            {% endfor %}
+        </div>
+        <div class="h2">Your Top Threes</div>
+        <div class="display">
+            {% for report in top_3_reports %}
+            {{ report }}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="h2">Risk Examples</div>
+    <div class="extra_text_box">
+        {% if app_developers_report %}
+        <div class="small_title">Deleted Users and Guest Users that Developed an App</div>
+        <div class="sample">
+            {{ app_developers_report }}
+        </div>
+        {% endif %}
+
+        {% if connectors_report %}
+        <div class="small_title">Untrusted and Deprecated Connectors</div>
+        <div class="sample">
+            {{ connectors_report }}
+        </div>
+        {% endif %}
+
+        {% if bypass_consent_report %}
+        <div class="small_title">Bypass Consent</div>
+        <div class="sample">
+            {{ bypass_consent_report }}
+        </div>
+        {% endif %}
+    </div>
+    <div>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" align="center">
+            <tbody>
+            <tr>
+                <td align="center" valign="middle" background="#f4f9fa" bgcolor="#f4f9fa"
+                    style="background: #f4f9fa ; background-size: cover; padding: 50px 15px 0 15px;">
+                    <table class="w100p" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                        <tr>
+                            <td>
+                                <div class="h3">Need Help? Discuss Your Findings With Us.</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div>
+                                    <p style="color: #2a343c; font-size: 17px; align: center; line-height: 25px; font-family: 'Open Sans', Helvetica, Arial, sans-serif; margin-top: 10px; margin-bottom: 30px;">
+                                        We hope you find this report helpful. Feel free to share an anonymized subset of
+                                        your report data with Nokod and get further evaluation, benchmarks, and
+                                        remediation tips. </p></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 50px 15px 30px 15px;">
+                                <button class="button" onclick="openGmail()">SHARE ANONYMIZED DATA WITH NOKOD</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tbody>
+            <tr>
+                <td align="center" valign="top" background="#333a5f" bgcolor="#333a5f"
+                    style="background: #333a5f; background-size: cover; padding: 50px 0 0 0;" class="mobile-padding">
+                    <table class="w100p" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0"
+                           style="width: 1400px">
+                        <tbody>
+                        <tr>
+                            <td align="left" valign="top" style="padding: 0 0 50px 0;">
+                                <a href="https://nokodsecurity.com/?utm_source=powersat&utm_medium=link&utm_content=logo"><img
+                                        src="https://nokodsecurity.com/wp-content/uploads/2023/11/Nokod_white_stacked.png"
+                                        width="120" height="" border="0" style="display: block;"></a>
+                            </td>
+                            <td align="left" valign="bottom" style="padding: 0 0 50px 0;">
+                                <p style="color: #ffffff; font-size: 17px; line-height: 25px; font-family: 'Open Sans', Helvetica, Arial, sans-serif; margin-top: 5px;">
+                                    Here is why we made this assessment tool. <a
+                                        href="https://nokodsecurity.com/power-platform-security-assessment-tool/?utm_source=powersat&utm_medium=link&utm_content=lp">Read
+                                    More &gt;&gt;</a>
+                                    <br>
+                                    <a href="https://nokodsecurity.com/resources/?utm_source=powersat&utm_medium=link&utm_content=resources">Additional
+                                        Resources</a> | <a
+                                        href="https://nokodsecurity.com/about-us/contact-us/?utm_source=powersat&utm_medium=link&utm_content=contact">Contact
+                                    Nokod
+                                    Security </a></p>
+                            </td>
+                            <td align="left" valign="top" style="padding: 0 0 20px 0;">
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
