@@ -85,11 +85,11 @@ class SecurityAssessmentTool:
                 f'{str(result[4].count) + ("+" if not result[4].all_resources_fetched else ""):<18} '
                 f'{str(result[5]) + ("+" if total_has_plus else ""):<15} '
             )
-
-        print()
-        print('Environments failed to scan - Insufficient user permissions:')
-        for failed_environment in failed_environments:
-            print(f'{failed_environment[ComponentType.ENVIRONMENT].properties.displayName}')
+        if failed_environments:
+            print()
+            print('Environments failed to scan - Insufficient user permissions:')
+            for failed_environment in failed_environments:
+                print(f'{failed_environment[ComponentType.ENVIRONMENT].properties.displayName}')
 
         print()
 

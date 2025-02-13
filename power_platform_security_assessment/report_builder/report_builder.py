@@ -61,7 +61,8 @@ class ReportBuilder:
                                             email_body=email_body, failed_environments=failed_environments)
         with open('power_platform_scan_report.html', 'w') as f:
             f.write(rendered_template)
-            print(f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
+            print(
+                f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
 
     def _build_email_body(self):
         data = self.get_components_per_env()
@@ -80,8 +81,8 @@ class ReportBuilder:
             header=dict(values=list(df.columns),
                         fill_color=self.TITLE_COLOR,
                         align='left'),
-            cells=dict(values=[df['Name'], df['Type'], df['Created By'], df['Create Time'], df['Last Activity'],
-                               df['Scan Status']],
+            cells=dict(values=[df.get('Name'), df.get('Type'), df.get('Created By'), df.get('Last Activity'),
+                               df.get('Scan Status')],
                        fill_color=self.BACKGROUND_COLOR,
                        line=dict(color='white'),
                        align='left'))],
@@ -128,8 +129,8 @@ class ReportBuilder:
                 fill_color=self.TITLE_COLOR,
                 align='left'
             ),
-            cells=dict(values=[df['Name'], df['Applications'], df['Cloud Flows'], df['Desktop Flows'],
-                               df['Model Driven Apps'], df['Total']],
+            cells=dict(values=[df.get('Name'), df.get('Applications'), df.get('Cloud Flows'), df.get('Desktop Flows'),
+                               df.get('Model Driven Apps'), df.get('Total')],
                        fill_color=self.BACKGROUND_COLOR,
                        align='left'))],
             layout={'title': 'Components per Environment', 'plot_bgcolor': self.BACKGROUND_COLOR,
@@ -164,9 +165,10 @@ class ReportBuilder:
             header=dict(values=list(df.columns),
                         fill_color=self.TITLE_COLOR,
                         align='left'),
-            cells=dict(values=[df['Environment Name'], df['Type'], df['Total Components'], df['Developers *']],
-                       fill_color=self.BACKGROUND_COLOR,
-                       align='left'))],
+            cells=dict(
+                values=[df.get('Environment Name'), df.get('Type'), df.get('Total Components'), df.get('Developers *')],
+                fill_color=self.BACKGROUND_COLOR,
+                align='left'))],
             layout={'title': 'Top 3 Biggest Environments', 'height': 300, 'annotations': [
                 go.layout.Annotation(x=1, y=-0.15, showarrow=False, xanchor='right', yanchor='bottom',
                                      text='* - Developers are users who own at least one application in the '
@@ -196,7 +198,7 @@ class ReportBuilder:
             header=dict(values=list(df.columns),
                         fill_color=self.TITLE_COLOR,
                         align='left'),
-            cells=dict(values=[df['Name'], df['Publisher'], df['Connections Count']],
+            cells=dict(values=[df.get('Name'), df.get('Publisher'), df.get('Connections Count')],
                        fill_color=self.BACKGROUND_COLOR,
                        align='left'))],
             layout={'title': 'Top 3 Most Used Connectors', 'height': 300})
@@ -222,7 +224,7 @@ class ReportBuilder:
                 header=dict(values=list(df.columns),
                             fill_color=self.TITLE_COLOR,
                             align='left'),
-                cells=dict(values=[df['Environment Name'], df['Number of Connectors']],
+                cells=dict(values=[df.get('Environment Name'), df.get('Number of Connectors')],
                            fill_color=self.BACKGROUND_COLOR,
                            align='left'))],
             layout={'title': 'Connectors per environment',
