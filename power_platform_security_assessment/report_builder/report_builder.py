@@ -69,7 +69,8 @@ class ReportBuilder:
         )
         with open('power_platform_scan_report.html', 'w') as f:
             f.write(rendered_template)
-            print(f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
+            print(
+                f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
 
     def _build_email_body(self):
         data = self.get_components_per_env()[:-1]
@@ -92,8 +93,8 @@ class ReportBuilder:
             header=dict(values=list(df.columns),
                         fill_color=self.TITLE_COLOR,
                         align='left'),
-            cells=dict(values=[df['Name'], df['Type'], df['Created By'], df['Create Time'], df['Last Activity'],
-                               df['Scan Status']],
+            cells=dict(values=[df.get('Name'), df.get('Type'), df.get('Created By'), df.get('Last Activity'),
+                               df.get('Scan Status')],
                        fill_color=self.BACKGROUND_COLOR,
                        line=dict(color='white'),
                        align='left'))],
@@ -152,8 +153,8 @@ class ReportBuilder:
                 fill_color=self.TITLE_COLOR,
                 align='left'
             ),
-            cells=dict(values=[df['Name'], df['Canvas Apps'], df['Cloud Flows'], df['Desktop Flows'],
-                               df['Model Driven Apps'], df['Total']],
+            cells=dict(values=[df.get('Name'), df.get('Canvas Apps'), df.get('Cloud Flows'), df.get('Desktop Flows'),
+                               df.get('Model Driven Apps'), df.get('Total')],
                        fill_color=self.BACKGROUND_COLOR,
                        align='left'))],
             layout={'title': {'text': 'Components per Environment', 'x': 0.5}, 'plot_bgcolor': self.BACKGROUND_COLOR,
@@ -178,7 +179,8 @@ class ReportBuilder:
             total_display = f'{total_count}' + ("+" if not all([env[ComponentType.APPLICATIONS].all_resources_fetched,
                                                                 env[ComponentType.CLOUD_FLOWS].all_resources_fetched,
                                                                 env[ComponentType.DESKTOP_FLOWS].all_resources_fetched,
-                                                                env[ComponentType.MODEL_DRIVEN_APPS].all_resources_fetched]) else "")
+                                                                env[
+                                                                    ComponentType.MODEL_DRIVEN_APPS].all_resources_fetched]) else "")
             data.append({
                 'Name': env[ComponentType.ENVIRONMENT].properties.displayName,
                 'Canvas Apps': canvas_display,
@@ -207,9 +209,10 @@ class ReportBuilder:
             header=dict(values=list(df.columns),
                         fill_color=self.TITLE_COLOR,
                         align='left'),
-            cells=dict(values=[df['Environment Name'], df['Type'], df['Total Components'], df['Developers *']],
-                       fill_color=self.BACKGROUND_COLOR,
-                       align='left'))],
+            cells=dict(
+                values=[df.get('Environment Name'), df.get('Type'), df.get('Total Components'), df.get('Developers *')],
+                fill_color=self.BACKGROUND_COLOR,
+                align='left'))],
             layout={'title': {'text': 'Top 3 Biggest Environments', 'x': 0.5}, 'height': 300, 'annotations': [
                 go.layout.Annotation(x=0, y=-0.2, showarrow=False, xanchor='left', yanchor='bottom',
                                      text='* Developers are users who own at least one application in the '
@@ -239,7 +242,7 @@ class ReportBuilder:
             header=dict(values=list(df.columns),
                         fill_color=self.TITLE_COLOR,
                         align='left'),
-            cells=dict(values=[df['Name'], df['Publisher'], df['Connections Count']],
+            cells=dict(values=[df.get('Name'), df.get('Publisher'), df.get('Connections Count')],
                        fill_color=self.BACKGROUND_COLOR,
                        align='left'))],
             layout={'title': {'text': 'Top 3 Most Used Connectors', 'x': 0.5}, 'height': 300})
@@ -265,11 +268,12 @@ class ReportBuilder:
                 header=dict(values=list(df.columns),
                             fill_color=self.TITLE_COLOR,
                             align='left'),
-                cells=dict(values=[df['Environment Name'], df['Number of Connectors']],
+                cells=dict(values=[df.get('Environment Name'), df.get('Number of Connectors')],
                            fill_color=self.BACKGROUND_COLOR,
                            align='left'))],
             layout={'title': {'text': 'Connectors per Environment', 'x': 0.5},
-                    'plot_bgcolor': self.BACKGROUND_COLOR, 'height': 150 + (len(data) * 20), 'margin': dict(l=10, r=10, t=100, b=0)})
+                    'plot_bgcolor': self.BACKGROUND_COLOR, 'height': 150 + (len(data) * 20),
+                    'margin': dict(l=10, r=10, t=100, b=0)})
         config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
         return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
 
