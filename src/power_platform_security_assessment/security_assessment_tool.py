@@ -208,7 +208,7 @@ class SecurityAssessmentTool:
         return all_applications, all_cloud_flows, all_connector_connections, all_desktop_flows, all_model_driven_apps, all_users_list, all_users_fetched
 
     def run_security_assessment(self):
-        print('Started scanning environments...')
+        print('Started Scanning Environments...')
         self._create_token()
         environments, total_envs = EnvironmentsFetcher().fetch_environments(self._access_token)
         token_manager = TokenManager(self._client_id, self._refresh_token)

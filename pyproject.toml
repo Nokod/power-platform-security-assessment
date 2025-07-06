@@ -1,0 +1,43 @@
+[project]
+name = "power-platform-security-assessment"
+version = "0.1.5"
+description = "Power Platform Security Assessment Tool"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+  {name = "Nokod Security", email = "support@nokodsecurity.com"}
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+    "alive-progress~=3.1.5",
+    "jinja2~=3.1.4",
+    "msal~=1.28.1",
+    "pandas~=2.2.2",
+    "plotly~=5.24.0",
+    "pydantic~=2.8.2",
+    "pydash~=8.0.3",
+    "python-dateutil~=2.8.2",
+    "requests~=2.32.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/Nokod/power-platform-security-assessment"
+Repository = "https://github.com/Nokod/power-platform-security-assessment"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+power-platform-security-assessment = "power_platform_security_assessment.security_assessment_tool:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/power_platform_security_assessment"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/power_platform_security_assessment/**/*"]
