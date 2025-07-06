@@ -24,17 +24,62 @@ The following Power Platform privileges are required for the tool to run:
 
 ## Installation
 
-To install the package, run the following command:
+You can install the package using pipx (recommended), pip, or [uv](https://docs.astral.sh/uv/).
 
+### Using pipx (recommended)
+pipx installs the package in an isolated environment and makes it available globally (works on all platforms).
+
+First, install pipx following the [official installation guide](https://github.com/pypa/pipx?tab=readme-ov-file#install-pipx).
+
+Then install the tool:
 ```bash
+pipx install power-platform-security-assessment
+```
+
+### Using uv
+```bash
+# Create virtual environment
+uv venv
+
+# Install the package
+uv pip install power-platform-security-assessment
+```
+
+### Using pip
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate   # macOS/Linux
+venv\Scripts\activate      # Windows
+
+# Install the package
 pip install power-platform-security-assessment
 ```
 
 ## Usage
 
-Run the security assessment tool:
-```sh
-power-platform-security-assessment 
+### If installed with pipx
+Run the security assessment tool directly:
+```bash
+power-platform-security-assessment
+```
+
+### If installed with pip or uv
+First activate your virtual environment, then run the tool:
+
+```bash
+# If installed with uv
+source .venv/bin/activate   # macOS/Linux
+.venv\Scripts\activate      # Windows
+
+# If installed with pip
+source venv/bin/activate    # macOS/Linux
+venv\Scripts\activate       # Windows
+
+# Run the tool
+power-platform-security-assessment
 ```
 
 ## License
