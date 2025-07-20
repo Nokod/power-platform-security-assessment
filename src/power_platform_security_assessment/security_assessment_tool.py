@@ -32,6 +32,7 @@ class SecurityAssessmentTool:
     def _create_token(self):
         app = msal.PublicClientApplication('9cee029c-6210-4654-90bb-17e6e9d36617', authority=Requests.AUTHORITY)
         result = app.acquire_token_interactive(scopes=Requests.ENVIRONMENTS_SCOPE)
+        self._display_user_info_from_claims(result)
 
         if ResponseKeys.ACCESS_TOKEN in result:
             self._access_token = result[ResponseKeys.ACCESS_TOKEN]
@@ -39,6 +40,13 @@ class SecurityAssessmentTool:
             self._client_id = result.get("id_token_claims").get("aud")
         else:
             raise Exception("Failed to acquire token: %s" % result.get("error_description"))
+
+    def _display_user_info_from_claims(self, result: dict):
+        id_token_claims = result.get('id_token_claims', {})
+        display_name = id_token_claims.get('name', 'Unknown')
+        email = id_token_claims.get('preferred_username', 'Unknown')
+        self._logger.log(f"Running security assessment on behalf of: {display_name} ({email})")
+        self._logger.log()
 
     def _scan_environment(self, environment: Environment, token_manager: TokenManager):
         env_scanner = EnvironmentScanner(
