@@ -7,30 +7,31 @@ from dateutil.relativedelta import relativedelta
 from pydash import find_index, chain
 
 from power_platform_security_assessment.base_classes import Environment
+from power_platform_security_assessment.logger import Logger
 
 
 class EnvironmentsFetcher:
     _MAX_ENVIRONMENTS_TO_SCAN = 10
 
-    def __init__(self):
+    def __init__(self, logger: Logger):
+        self._logger = logger
         self.environments = []
 
-    @staticmethod
-    def _display_environments(environments: list[Environment], total_envs: int):
+    def _display_environments(self, environments: list[Environment], total_envs: int):
         max_display_name_length = max([len(env.properties.displayName) for env in environments])
-        print(f'Total number of environments: {total_envs}')
-        print()
-        print(
+        self._logger.log(f'Total number of environments: {total_envs}')
+        self._logger.log()
+        self._logger.log(
             f'{"ID":<44} {"Name":<{max_display_name_length}} {"Created By":<20} {"Create Time":<30} {"Last Activity":<30} {"Type":<10}')
         for env in environments:
             created_by = env.properties.createdBy.get('displayName', 'N/A')
-            print(
+            self._logger.log(
                 f'{env.id.split("/")[-1]:<44} {env.properties.displayName:<{max_display_name_length}} {created_by:<20} {env.properties.createdTime:<30} {env.properties.lastActivity.lastActivity.lastActivityTime:<30} {env.properties.environmentSku:<10}')
-        print()
+        self._logger.log()
 
     def _notify_user(self, total_envs: int):
         if total_envs > self._MAX_ENVIRONMENTS_TO_SCAN:
-            print(f'The number of environments exceeds {self._MAX_ENVIRONMENTS_TO_SCAN}. '
+            self._logger.log(f'The number of environments exceeds {self._MAX_ENVIRONMENTS_TO_SCAN}. '
                   f'Scanning only the selected environments due to runtime limitations.')
 
     @staticmethod

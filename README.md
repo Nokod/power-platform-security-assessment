@@ -82,6 +82,10 @@ venv\Scripts\activate       # Windows
 power-platform-security-assessment
 ```
 
+## Available Arguments
+
+- `--debug`: Enables debug mode with additional logging.
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
