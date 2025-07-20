@@ -1,6 +1,6 @@
 [project]
 name = "power-platform-security-assessment"
-version = "0.1.5"
+version = "0.1.6"
 description = "Power Platform Security Assessment Tool"
 readme = "README.md"
 requires-python = ">=3.9"
