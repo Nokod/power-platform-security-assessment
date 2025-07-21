@@ -6,7 +6,7 @@ class Logger:
         self._debug_enabled = debug_enabled
 
     def log(self, message="", log_level="info"):
-        if not message:
+        if message == "":
             print()
 
         # If debug is disabled, only print info level messages
