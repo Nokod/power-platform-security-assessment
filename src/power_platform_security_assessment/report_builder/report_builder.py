@@ -3,13 +3,13 @@ import os
 import pandas as pd
 import plotly.graph_objects as go
 from jinja2 import Template
-
 from power_platform_security_assessment.base_classes import User, CloudFlow, Application, ModelDrivenApp, DesktopFlow, \
     ConnectorWithConnections, Environment, ResourceData
 from power_platform_security_assessment.consts import ComponentType
 from power_platform_security_assessment.security_features.common import is_app_disabled, is_flow_disabled, \
     is_model_driven_app_disabled, is_desktop_flow_disabled
 from power_platform_security_assessment.utils import get_environment_developers_count, round_time_to_seconds
+from power_platform_security_assessment.logger import Logger
 
 
 class ReportBuilder:
@@ -22,10 +22,11 @@ class ReportBuilder:
     MAIN_ORANGE = '#f9a14d'
     VULN_COLOR = '#9c9c9c'
 
-    def __init__(self, applications: list[Application], cloud_flows: list[CloudFlow], desktop_flows: list[DesktopFlow],
+    def __init__(self, logger: Logger, applications: list[Application], cloud_flows: list[CloudFlow], desktop_flows: list[DesktopFlow],
                  model_driven_apps: list[ModelDrivenApp], users: list[User],
                  connectors: list[ConnectorWithConnections], environments_results: list, failed_environments: list,
                  environments: list[Environment], total_envs: int, all_users_fetched: bool):
+        self._logger = logger
         self._applications = applications
         self._cloud_flows = cloud_flows
         self._desktop_flows = desktop_flows
@@ -69,7 +70,7 @@ class ReportBuilder:
         )
         with open('power_platform_scan_report.html', 'w') as f:
             f.write(rendered_template)
-            print(
+            self._logger.log(
                 f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
 
     def _build_email_body(self):

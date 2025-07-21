@@ -4,11 +4,12 @@ from power_platform_security_assessment.base_classes import CloudFlow
 from power_platform_security_assessment.consts import Requests
 from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
+from power_platform_security_assessment.logger import Logger
 
 
 class CloudFlowsFetcher(BaseResourceFetcher):
-    def __init__(self, env_id: str, token_manager: TokenManager):
-        super().__init__(env_id, token_manager)
+    def __init__(self, env_id: str, token_manager: TokenManager, logger: Logger):
+        super().__init__(env_id, token_manager, logger)
 
     def _get_request_url(self):
         params = {"api-version": "2016-11-01"}

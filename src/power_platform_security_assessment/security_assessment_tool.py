@@ -1,4 +1,5 @@
 import concurrent.futures
+import argparse
 from collections import Counter
 
 import msal
@@ -18,17 +19,20 @@ from power_platform_security_assessment.security_features.bypass_consent.bypass_
     BypassConsentAnalyzer
 from power_platform_security_assessment.security_features.connectors.connectors_analyzer import ConnectorsAnalyzer
 from power_platform_security_assessment.token_manager import TokenManager
+from power_platform_security_assessment.logger import Logger
 
 
 class SecurityAssessmentTool:
-    def __init__(self):
+    def __init__(self, debug=False):
         self._access_token = None
         self._refresh_token = None
         self._client_id = None
+        self._logger = Logger(debug_enabled=debug)
 
     def _create_token(self):
         app = msal.PublicClientApplication('9cee029c-6210-4654-90bb-17e6e9d36617', authority=Requests.AUTHORITY)
         result = app.acquire_token_interactive(scopes=Requests.ENVIRONMENTS_SCOPE)
+        self._display_user_info_from_claims(result)
 
         if ResponseKeys.ACCESS_TOKEN in result:
             self._access_token = result[ResponseKeys.ACCESS_TOKEN]
@@ -37,17 +41,23 @@ class SecurityAssessmentTool:
         else:
             raise Exception("Failed to acquire token: %s" % result.get("error_description"))
 
-    @staticmethod
-    def _scan_environment(environment: Environment, token_manager: TokenManager):
+    def _display_user_info_from_claims(self, result: dict):
+        id_token_claims = result.get('id_token_claims', {})
+        display_name = id_token_claims.get('name', 'Unknown')
+        email = id_token_claims.get('preferred_username', 'Unknown')
+        self._logger.log(f"Running security assessment on behalf of: {display_name} ({email})")
+        self._logger.log()
+
+    def _scan_environment(self, environment: Environment, token_manager: TokenManager):
         env_scanner = EnvironmentScanner(
             environment=environment,
             token_manager=token_manager,
+            logger=self._logger,
         )
         return env_scanner.scan_environment()
 
-    @staticmethod
-    def _display_environment_results(environments_results, failed_environments):
-        print(
+    def _display_environment_results(self, environments_results, failed_environments):
+        self._logger.log(
             f'{"Environment":<44} {"Canvas Apps":<15} {"Cloud Flows":<15} {"Desktop Flows":<15} {"Model-Driven Apps":<18} {"Total":<15}')
 
         results: list[tuple[str, ResourceData, ResourceData, ResourceData, ResourceData, int]] = []
@@ -78,7 +88,7 @@ class SecurityAssessmentTool:
                 not result[i].all_resources_fetched
                 for i in range(1, 5)
             )
-            print(
+            self._logger.log(
                 f'{result[0]:<44} '
                 f'{str(result[1].count) + ("+" if not result[1].all_resources_fetched else ""):<15} '
                 f'{str(result[2].count) + ("+" if not result[2].all_resources_fetched else ""):<15} '
@@ -88,12 +98,12 @@ class SecurityAssessmentTool:
             )
 
         if failed_environments:
-            print()
-            print('Environments failed to scan - Insufficient user permissions:')
+            self._logger.log()
+            self._logger.log('Environments failed to scan - Insufficient user permissions:')
             for failed_environment in failed_environments:
-                print(f'{failed_environment[ComponentType.ENVIRONMENT].properties.displayName}')
+                self._logger.log(f'{failed_environment[ComponentType.ENVIRONMENT].properties.displayName}')
 
-        print()
+        self._logger.log()
 
     @staticmethod
     def _handle_environment_users(environments_results) -> tuple[list[User], bool]:
@@ -129,10 +139,9 @@ class SecurityAssessmentTool:
         # Return connectors sorted by the number of connections
         return sorted(all_connector_connections, key=lambda x: len(x.connections), reverse=True)
 
-    @staticmethod
-    def _display_users(users_list: list[User], all_users_fetched: bool):
-        print(f'{"Total Users":<22}')
-        print(f'{len(users_list)}' + ("+" if not all_users_fetched else ""))
+    def _display_users(self, users_list: list[User], all_users_fetched: bool):
+        self._logger.log(f'{"Total Users":<22}')
+        self._logger.log(f'{len(users_list)}' + ("+" if not all_users_fetched else ""))
 
         user_types = Counter()
         azure_states = Counter()
@@ -141,25 +150,23 @@ class SecurityAssessmentTool:
             user_types['guest' if '#EXT#' in (user.domainname or '') else 'internal'] += 1
             azure_states[user.azurestate] += 1
 
-        print(f'{"Internal Users":<22} {"Guest Users":<22}')
-        print(f'{user_types["internal"]:<22} {user_types["guest"]:<22}')
+        self._logger.log(f'{"Internal Users":<22} {"Guest Users":<22}')
+        self._logger.log(f'{user_types["internal"]:<22} {user_types["guest"]:<22}')
 
-        print(f'{"Active (0)":<22} {"AD Soft Delete (1)":<22} {"AD Hard Delete (2)":<22}')
-        print(f'{azure_states[0]:<22} {azure_states[1]:<22} {azure_states[2]:<22}')
-        print()
+        self._logger.log(f'{"Active (0)":<22} {"AD Soft Delete (1)":<22} {"AD Hard Delete (2)":<22}')
+        self._logger.log(f'{azure_states[0]:<22} {azure_states[1]:<22} {azure_states[2]:<22}')
+        self._logger.log()
 
-    @staticmethod
-    def _display_connections(all_connector_connections: list[ConnectorWithConnections]):
-        print(f'{"Connector":<22} {"Publisher":<22} {"Number of Connections":<22}')
+    def _display_connections(self, all_connector_connections: list[ConnectorWithConnections]):
+        self._logger.log(f'{"Connector":<22} {"Publisher":<22} {"Number of Connections":<22}')
         for connector_with_connections in all_connector_connections[:3]:
             connector = connector_with_connections.connector
             connections_count = len(connector_with_connections.connections)
-            print(f'{connector.name:<22} {connector.properties.publisher:<22} {connections_count:<22}')
+            self._logger.log(f'{connector.name:<22} {connector.properties.publisher:<22} {connections_count:<22}')
 
-        print()
+        self._logger.log()
 
-    @staticmethod
-    def _display_app_developers(all_applications, all_cloud_flows, users_list, environments):
+    def _display_app_developers(self, all_applications, all_cloud_flows, users_list, environments):
         app_developer_analyzer = AppDeveloperAnalyzer(all_applications, all_cloud_flows, users_list, environments)
         app_developers_result = app_developer_analyzer.analyze()
         return app_developers_result.textual_report
@@ -188,7 +195,7 @@ class SecurityAssessmentTool:
         self._display_users(all_users_list, all_users_fetched)
         self._display_connections(all_connector_connections)
 
-        report_builder = ReportBuilder(all_applications, all_cloud_flows, all_desktop_flows, all_model_driven_apps,
+        report_builder = ReportBuilder(self._logger, all_applications, all_cloud_flows, all_desktop_flows, all_model_driven_apps,
                                        all_users_list, all_connector_connections, environments_results,
                                        failed_environments, environments, total_envs, all_users_fetched)
 
@@ -208,9 +215,10 @@ class SecurityAssessmentTool:
         return all_applications, all_cloud_flows, all_connector_connections, all_desktop_flows, all_model_driven_apps, all_users_list, all_users_fetched
 
     def run_security_assessment(self):
-        print('Started Scanning Environments...')
         self._create_token()
-        environments, total_envs = EnvironmentsFetcher().fetch_environments(self._access_token)
+        self._logger.log('Started Scanning Environments...')
+        environments_fetcher = EnvironmentsFetcher(logger=self._logger)
+        environments, total_envs = environments_fetcher.fetch_environments(self._access_token)
         token_manager = TokenManager(self._client_id, self._refresh_token)
         environments_results = []
         failed_environments = []
@@ -227,7 +235,7 @@ class SecurityAssessmentTool:
                         else:
                             failed_environments.append(result)
                     except Exception as e:
-                        print(f"An error occurred during environment scanning: {e}")
+                        self._logger.log(f"An error occurred during environment scanning: {e}")
                     finally:
                         bar()
 
@@ -235,7 +243,13 @@ class SecurityAssessmentTool:
 
 
 def main():
-    security_assessment_tool = SecurityAssessmentTool()
+    parser = argparse.ArgumentParser(description="Power Platform Security Assessment Tool")
+    parser.add_argument(
+        "--debug", action="store_true", help="Enable debug mode with additional logging"
+    )
+    args = parser.parse_args()
+
+    security_assessment_tool = SecurityAssessmentTool(debug=args.debug)
     security_assessment_tool.run_security_assessment()
 
 

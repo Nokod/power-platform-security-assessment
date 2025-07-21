@@ -4,11 +4,12 @@ from power_platform_security_assessment.base_classes import Application
 from power_platform_security_assessment.consts import Requests
 from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
+from power_platform_security_assessment.logger import Logger
 
 
 class ApplicationsFetcher(BaseResourceFetcher):
-    def __init__(self, env_id: str, token_manager: TokenManager):
-        super().__init__(env_id, token_manager)
+    def __init__(self, env_id: str, token_manager: TokenManager, logger: Logger):
+        super().__init__(env_id, token_manager, logger)
 
     def _get_request_url(self):
         environment_id_with_dot = f'{self._env_id[:-2]}.{self._env_id[-2:]}'

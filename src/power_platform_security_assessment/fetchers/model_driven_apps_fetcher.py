@@ -3,12 +3,13 @@ from urllib.parse import urlencode
 from power_platform_security_assessment.base_classes import ModelDrivenApp
 from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
+from power_platform_security_assessment.logger import Logger
 
 
 class ModelDrivenAppsFetcher(BaseResourceFetcher):
-    def __init__(self, instance_api_url: str, env_id: str, token_manager: TokenManager):
+    def __init__(self, instance_api_url: str, env_id: str, token_manager: TokenManager, logger: Logger):
         self._instance_api_url = instance_api_url
-        super().__init__(env_id, token_manager)
+        super().__init__(env_id, token_manager, logger)
 
     def _get_request_url(self):
         params = {

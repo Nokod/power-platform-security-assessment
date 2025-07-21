@@ -6,6 +6,7 @@ from power_platform_security_assessment.base_classes import Connector, Connectio
 from power_platform_security_assessment.consts import Requests
 from power_platform_security_assessment.fetchers.base_resource_fetcher import BaseResourceFetcher
 from power_platform_security_assessment.token_manager import TokenManager
+from power_platform_security_assessment.logger import Logger
 
 
 class _ConnectionWithConnectorName(Connection):
@@ -16,8 +17,8 @@ class ConnectionsFetcher(BaseResourceFetcher):
     _CONNECTORS_URL = 'https://api.powerapps.com/api/invoke'
     _IGNORED_CONNECTORS = ['shared_logicflows']
 
-    def __init__(self, env_id: str, token_manager: TokenManager):
-        super().__init__(env_id, token_manager)
+    def __init__(self, env_id: str, token_manager: TokenManager, logger: Logger):
+        super().__init__(env_id, token_manager, logger)
 
     def _get_all_connections_url(self):
         params = {"api-version": "2016-11-01"}
