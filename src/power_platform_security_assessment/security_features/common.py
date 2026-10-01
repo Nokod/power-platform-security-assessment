@@ -1,6 +1,5 @@
 import re
 
-from pydash import get, uniq
 
 from power_platform_security_assessment.base_classes import (
     User, Application, CloudFlow, ConnectorWithConnections, ModelDrivenApp, DesktopFlow
@@ -15,36 +14,38 @@ def extract_environment_id(resource_id: str) -> str:
 
 
 def extract_environment_ids_from_connectors(connectors: list[ConnectorWithConnections]) -> list[str]:
-    return uniq(
+    return list(dict.fromkeys(
         extract_environment_id(connection.id)
         for connector in connectors
         for connection in connector.connections
-    )
+    ))
 
 
 def extract_user_domain(user: User) -> str:
-    return user.domainname.split("@")[1].split(".")[0] if '@' in user.domainname else user.domainname
+    domain_name = user.domainname
+    if '#EXT#' in domain_name:
+        # Guest UPNs look like "alice_contoso.com#EXT#@tenant.onmicrosoft.com" - the home domain is before #EXT#
+        domain_name = domain_name.split('#EXT#')[0].replace('_', '@')
+    return domain_name.split("@")[-1].split(".")[0] if '@' in domain_name else domain_name
 
 
 def get_application_owner_id(app: Application) -> str:
-    return get(app, 'properties.owner.id')
+    return app.properties.owner.id
 
 
 def get_cloud_flow_owner_id(cloud_flow: CloudFlow) -> str:
-    return get(cloud_flow, 'properties.creator.userId')
-
-
-def get_desktop_flow_owner_id(desktop_flow: DesktopFlow) -> str:
-    return desktop_flow.workflowidunique
-
-
-def get_model_driven_app_owner_id(model_driven_app: ModelDrivenApp) -> str:
-    return model_driven_app.appmoduleidunique
+    return cloud_flow.properties.creator.userId
 
 
 def is_app_disabled(app: Application) -> bool:
-    return (get(app, 'properties.executionRestrictions.appQuarantineState.quarantineStatus') == 'Quarantined'
-            or len(get(app, 'properties.executionRestrictions.dataLossPreventionEvaluationResult.violations', [])) > 0)
+    restrictions = app.properties.executionRestrictions
+    if not restrictions:
+        return False
+    quarantined = bool(restrictions.appQuarantineState) and \
+        restrictions.appQuarantineState.quarantineStatus == 'Quarantined'
+    dlp_result = restrictions.dataLossPreventionEvaluationResult
+    has_dlp_violations = bool(dlp_result) and len(dlp_result.violations or []) > 0
+    return quarantined or has_dlp_violations
 
 
 def is_flow_disabled(flow: CloudFlow) -> bool:

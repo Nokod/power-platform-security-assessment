@@ -1,6 +1,7 @@
 from urllib.parse import urlencode
 
-from pydash import map_, filter_
+import requests
+
 
 from power_platform_security_assessment.base_classes import Connector, Connection, ConnectorWithConnections
 from power_platform_security_assessment.consts import Requests
@@ -44,14 +45,22 @@ class ConnectionsFetcher(BaseResourceFetcher):
         additional_used_connectors = []
         for connector_name in connector_names:
             if connector_name not in {connector.name for connector in connectors + custom_connectors}:
-                connector_data = self._fetch_single_page(
-                    url=self._CONNECTORS_URL,
-                    headers={
-                        'x-ms-path-query': f'/providers/Microsoft.PowerApps/apis/{connector_name}?showApisWithToS=true&$expand=permissions&$filter=environment eq \'{self._env_id}\'&api-version=2020-06-01',
-                        'Authorization': f'Bearer {token}',
-                    }
-                )
-                additional_used_connectors.append(Connector(**connector_data))
+                try:
+                    connector_data = self._fetch_single_page(
+                        url=self._CONNECTORS_URL,
+                        headers={
+                            'x-ms-path-query': f'/providers/Microsoft.PowerApps/apis/{connector_name}?showApisWithToS=true&$expand=permissions&$filter=environment eq \'{self._env_id}\'&api-version=2020-06-01',
+                            'Authorization': f'Bearer {token}',
+                        }
+                    )
+                except requests.HTTPError as e:
+                    if e.response is None or e.response.status_code != 403:
+                        raise
+                    # e.g. a custom connector not shared with the caller - skip it rather than failing the environment
+                    self._logger.log(f"Skipping connector {connector_name}: {e}", log_level="warning")
+                    continue
+                if connector_data:
+                    additional_used_connectors.append(Connector(**connector_data))
 
         return [
             connector for connector
@@ -103,10 +112,13 @@ class ConnectionsFetcher(BaseResourceFetcher):
             connector_names=used_connector_names
         )
 
-        connectors_with_connections = map_(connectors, lambda connector: ConnectorWithConnections(
-            connector=connector,
-            connections=filter_(connections, lambda connection: connection.connector_name == connector.name)
-        ))
+        connectors_with_connections = [
+            ConnectorWithConnections(
+                connector=connector,
+                connections=[connection for connection in connections if connection.connector_name == connector.name],
+            )
+            for connector in connectors
+        ]
 
         # Return connectors sorted by the number of connections
         return sorted(connectors_with_connections, key=lambda x: len(x.connections), reverse=True)

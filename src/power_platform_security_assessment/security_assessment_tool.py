@@ -1,17 +1,19 @@
 import concurrent.futures
 import argparse
+import sys
 from collections import Counter
 
+import colorama
 import msal
 from alive_progress import alive_bar
-from pydash import flatten_deep, values
 
 from power_platform_security_assessment.base_classes import (
     Environment, User, ConnectorWithConnections, Application, ResourceData, CloudFlow, DesktopFlow, ModelDrivenApp
 )
 from power_platform_security_assessment.consts import Requests, ResponseKeys, ComponentType
 from power_platform_security_assessment.environment_scanner import EnvironmentScanner
-from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher
+from power_platform_security_assessment.fetchers.environments_fetcher import EnvironmentsFetcher, \
+    InsufficientPermissionsError
 from power_platform_security_assessment.report_builder.report_builder import ReportBuilder
 from power_platform_security_assessment.security_features.app_developers.app_developer_analyzer import \
     AppDeveloperAnalyzer
@@ -31,7 +33,8 @@ class SecurityAssessmentTool:
 
     def _create_token(self):
         app = msal.PublicClientApplication('9cee029c-6210-4654-90bb-17e6e9d36617', authority=Requests.AUTHORITY)
-        result = app.acquire_token_interactive(scopes=Requests.ENVIRONMENTS_SCOPE)
+        # Always show the account picker, so users signed in to several accounts can choose (or switch) the right one
+        result = app.acquire_token_interactive(scopes=Requests.ENVIRONMENTS_SCOPE, prompt='select_account')
         self._display_user_info_from_claims(result)
 
         if ResponseKeys.ACCESS_TOKEN in result:
@@ -134,7 +137,7 @@ class SecurityAssessmentTool:
                     connector_mapping[connector_name] = connector_with_connections
 
         # Convert the dictionary back to a list
-        all_connector_connections = values(connector_mapping)
+        all_connector_connections = list(connector_mapping.values())
 
         # Return connectors sorted by the number of connections
         return sorted(all_connector_connections, key=lambda x: len(x.connections), reverse=True)
@@ -162,7 +165,7 @@ class SecurityAssessmentTool:
         for connector_with_connections in all_connector_connections[:3]:
             connector = connector_with_connections.connector
             connections_count = len(connector_with_connections.connections)
-            self._logger.log(f'{connector.name:<22} {connector.properties.publisher:<22} {connections_count:<22}')
+            self._logger.log(f'{connector.properties.displayName:<22} {connector.properties.publisher:<22} {connections_count:<22}')
 
         self._logger.log()
 
@@ -201,29 +204,33 @@ class SecurityAssessmentTool:
 
         report_builder.build_report(app_developers_report, connector_issues_report, bypass_consent_report)
 
+    @staticmethod
+    def _collect_resources(environments_results, component_type: ComponentType) -> list:
+        return [resource for env_results in environments_results for resource in env_results[component_type].value]
+
     def fetch_resources(self, environments_results):
         all_users_list, all_users_fetched = self._handle_environment_users(environments_results)
         all_connector_connections = self._handle_connector_connections(environments_results)
-        all_applications = flatten_deep(
-            [env_results[ComponentType.APPLICATIONS].value for env_results in environments_results])
-        all_cloud_flows = flatten_deep(
-            [env_results[ComponentType.CLOUD_FLOWS].value for env_results in environments_results])
-        all_desktop_flows = flatten_deep(
-            [env_results[ComponentType.DESKTOP_FLOWS].value for env_results in environments_results])
-        all_model_driven_apps = flatten_deep(
-            [env_results[ComponentType.MODEL_DRIVEN_APPS].value for env_results in environments_results])
+        all_applications = self._collect_resources(environments_results, ComponentType.APPLICATIONS)
+        all_cloud_flows = self._collect_resources(environments_results, ComponentType.CLOUD_FLOWS)
+        all_desktop_flows = self._collect_resources(environments_results, ComponentType.DESKTOP_FLOWS)
+        all_model_driven_apps = self._collect_resources(environments_results, ComponentType.MODEL_DRIVEN_APPS)
         return all_applications, all_cloud_flows, all_connector_connections, all_desktop_flows, all_model_driven_apps, all_users_list, all_users_fetched
 
     def run_security_assessment(self):
         self._create_token()
         self._logger.log('Started Scanning Environments...')
         environments_fetcher = EnvironmentsFetcher(logger=self._logger)
-        environments, total_envs = environments_fetcher.fetch_environments(self._access_token)
+        try:
+            environments, total_envs = environments_fetcher.fetch_environments(self._access_token)
+        except InsufficientPermissionsError as e:
+            self._logger.log(str(e))
+            return False
         token_manager = TokenManager(self._client_id, self._refresh_token)
         environments_results = []
         failed_environments = []
 
-        with alive_bar(len(environments), bar='blocks') as bar:
+        with alive_bar(len(environments), **_progress_bar_style()) as bar:
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 futures = [executor.submit(self._scan_environment, environment, token_manager) for environment in
                            environments]
@@ -240,9 +247,30 @@ class SecurityAssessmentTool:
                         bar()
 
         self._handle_results(environments_results, failed_environments, environments, total_envs)
+        return True
+
+
+def _configure_console():
+    # Windows consoles and redirected output default to a legacy code page (e.g. cp1252), which can't encode
+    # the progress bar characters or non-latin environment / user names.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding='utf-8', errors='replace')
+        except (AttributeError, ValueError):
+            pass
+    colorama.just_fix_windows_console()
+
+
+def _progress_bar_style() -> dict:
+    encoding = (getattr(sys.stdout, 'encoding', None) or '').lower().replace('-', '')
+    if encoding == 'utf8':
+        return {'bar': 'blocks'}
+    # Fall back to plain ASCII when the output encoding couldn't be switched to UTF-8
+    return {'bar': 'classic', 'spinner': 'classic'}
 
 
 def main():
+    _configure_console()
     parser = argparse.ArgumentParser(description="Power Platform Security Assessment Tool")
     parser.add_argument(
         "--debug", action="store_true", help="Enable debug mode with additional logging"
@@ -250,7 +278,8 @@ def main():
     args = parser.parse_args()
 
     security_assessment_tool = SecurityAssessmentTool(debug=args.debug)
-    security_assessment_tool.run_security_assessment()
+    if not security_assessment_tool.run_security_assessment():
+        sys.exit(1)
 
 
 if __name__ == '__main__':

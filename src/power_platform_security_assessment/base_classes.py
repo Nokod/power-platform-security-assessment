@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 T = TypeVar("T")
 
+_PLACEHOLDER_ACTIVITY_YEAR = 9000
+
 
 class LastActivityTimes(BaseModel):
     lastActivityTime: str
@@ -20,11 +22,21 @@ class LinkedEnvironmentMetadata(BaseModel):
 class EnvironmentProperties(BaseModel):
     displayName: str
     createdTime: str
-    createdBy: Dict[str, Any]
-    lastActivity: LastActivity
+    createdBy: Dict[str, Any] = {}
+    lastActivity: Optional[LastActivity] = None
     environmentSku: str
     isDefault: bool
     linkedEnvironmentMetadata: Optional[LinkedEnvironmentMetadata] = None
+
+    @property
+    def last_activity_time(self) -> Optional[str]:
+        if not self.lastActivity:
+            return None
+        last_activity_time = self.lastActivity.lastActivity.lastActivityTime
+        # The API returns a far-future placeholder (e.g. 9000-01-01) when there is no real activity date
+        if last_activity_time[:4].isdigit() and int(last_activity_time[:4]) >= _PLACEHOLDER_ACTIVITY_YEAR:
+            return None
+        return last_activity_time
 
 
 class Environment(BaseModel):

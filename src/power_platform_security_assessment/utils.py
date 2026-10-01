@@ -2,15 +2,14 @@ from dateutil import parser
 
 from power_platform_security_assessment.consts import ComponentType
 from power_platform_security_assessment.security_features.common import get_application_owner_id, \
-    get_cloud_flow_owner_id, get_desktop_flow_owner_id, get_model_driven_app_owner_id
+    get_cloud_flow_owner_id
 
 
 def get_environment_developers_count(environment_results) -> int:
+    # Only canvas apps and cloud flows expose their owner's AAD object id
     component_mappings = {
         ComponentType.APPLICATIONS: get_application_owner_id,
         ComponentType.CLOUD_FLOWS: get_cloud_flow_owner_id,
-        ComponentType.DESKTOP_FLOWS: get_desktop_flow_owner_id,
-        ComponentType.MODEL_DRIVEN_APPS: get_model_driven_app_owner_id,
     }
 
     # Use a set to store unique developer IDs
