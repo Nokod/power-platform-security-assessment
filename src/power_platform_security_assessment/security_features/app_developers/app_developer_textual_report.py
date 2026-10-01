@@ -1,7 +1,6 @@
 import random
 from typing import Union
 
-from pydash import find, flatten, chain
 
 from power_platform_security_assessment.base_classes import Environment, Application, CloudFlow
 from power_platform_security_assessment.security_features.app_developers.model import UserResources, Developers
@@ -22,33 +21,27 @@ class AppDeveloperTextualReport:
     def _get_environment_names(self, apps: list[Union[Application, CloudFlow]]) -> list[str]:
         environment_ids = {extract_environment_id(app.id) for app in apps}
         return [
-            find(self._environments, lambda env: env.name.lower() == env_id.lower()).properties.displayName
+            next(env for env in self._environments if env.name.lower() == env_id.lower()).properties.displayName
             for env_id in environment_ids
         ]
 
     def _generate_env_text(self, resources: list, resource_type: str):
-        apps_envs = self._get_environment_names(flatten(resources))
+        apps_envs = self._get_environment_names(resources)
         envs_text = f'<b>{"</b>, <b>".join(apps_envs)}</b> environment{"" if len(apps_envs) == 1 else "s"}'
-        return f'<b>{len(resources)}</b> {resource_type}{"" if len(resources) == 1 else "s"} in the {envs_text}.'
+        return f'<b>{len(resources)}</b> {resource_type}{"" if len(resources) == 1 else "s"} in the {envs_text}'
 
     def _generate_developer_textual_report(self, user_resources: list[UserResources], developer_type: str) -> str:
+        # Only users that actually own something are developers
+        user_resources = [u for u in user_resources if len(u.apps) + len(u.flows) >= 1]
         users_count = len(user_resources)
         apps_count = sum(len(developer.apps) for developer in user_resources)
         flows_count = sum(len(developer.flows) for developer in user_resources)
 
-        disabled_apps_count = (
-            chain(user_resources)
-            .flat_map(lambda developer: developer.apps)
-            .filter_(lambda app: is_app_disabled(app))
-            .size()
-            .value()
+        disabled_apps_count = sum(
+            is_app_disabled(app) for developer in user_resources for app in developer.apps
         )
-        disabled_flows_count = (
-            chain(user_resources)
-            .flat_map(lambda developer: developer.flows)
-            .filter_(lambda flow: is_flow_disabled(flow))
-            .size()
-            .value()
+        disabled_flows_count = sum(
+            is_flow_disabled(flow) for developer in user_resources for flow in developer.flows
         )
         total_disabled_count = disabled_apps_count + disabled_flows_count
         total_active_count = apps_count + flows_count - total_disabled_count
@@ -56,9 +49,13 @@ class AppDeveloperTextualReport:
         if users_count == 0 or apps_count + flows_count == 0:
             return ""
 
+        total_count = apps_count + flows_count
+        resources_text = ('There is <b>1</b> application or flow' if total_count == 1
+                          else f'There are <b>{total_count}</b> different applications and flows')
+        users_text = (f'<b>1</b> <b>{developer_type}</b> user' if users_count == 1
+                      else f'<b>{users_count}</b> different <b>{developer_type}</b> users')
         textual_report = (
-            f'There are <b>{apps_count + flows_count}</b> different applications and flows '
-            f'owned by <b>{users_count}</b> different <b>{developer_type}</b> users. '
+            f'{resources_text} owned by {users_text}. '
             f'<b>{total_disabled_count}</b> {"is" if total_disabled_count == 1 else "are"} disabled '
             f'and <b>{total_active_count}</b> {"is" if total_active_count == 1 else "are"} active.'
         )
@@ -74,7 +71,7 @@ class AppDeveloperTextualReport:
                 textual_report += ' and '  # Add "and" only if there are apps
             textual_report += self._generate_env_text(example_user.flows, 'flow')
 
-        return textual_report + '<br>'
+        return textual_report + '.<br>'
 
     def generate_textual_report(self, developers: Developers) -> str:
         guest_developers_textual_report = self._generate_developer_textual_report(developers.guest_developers, 'guest')

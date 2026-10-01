@@ -234,4 +234,7 @@ cython_debug/
 .vscode/
 
 # Project output
-power_platform_scan_report.html
+power_platform_scan_report*.html
+
+# Claude Code personal settings
+.claude/settings.local.json

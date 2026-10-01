@@ -1,5 +1,3 @@
-from pydash import get
-
 from power_platform_security_assessment.base_classes import ConnectorWithConnections
 from power_platform_security_assessment.security_features.connectors.connectors_analyzer_textual_report import (
     ConnectorsAnalyzerTextualReport
@@ -16,13 +14,13 @@ class ConnectorsAnalyzer:
     def analyze(self) -> ConnectorsAnalysisReport:
         deprecated_connectors = [
             c for c in self._connectors_with_connections
-            if c.connector.properties.displayName.endswith(' (Deprecated)')
+            if c.connector.properties.displayName.lower().endswith(' (deprecated)')
                or c.connector.properties.displayName in DEPRECATED_CONNECTOR_NAMES
         ]
 
         untrusted_connectors = [
             c for c in self._connectors_with_connections
-            if get(c.connector.properties.metadata, 'source') == 'independentpublisher'
+            if c.connector.properties.metadata.source == 'independentpublisher'
         ]
 
         connectors_analysis_result = ConnectorsAnalysisResult(

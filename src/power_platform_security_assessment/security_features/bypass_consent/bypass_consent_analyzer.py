@@ -1,5 +1,3 @@
-from pydash import get
-
 from power_platform_security_assessment.base_classes import Application
 from power_platform_security_assessment.security_features.bypass_consent.bypass_concent_textual_report import BypassConsentTextualReport
 from power_platform_security_assessment.security_features.bypass_consent.model import BypassConsentResult
@@ -14,7 +12,7 @@ class BypassConsentAnalyzer:
         bypass_consent_apps = [
             app for app in self._applications
             if app.properties.bypassConsent
-               and get(app, 'properties.embeddedApp.type') == 'SharepointFormApp'
+               and not (app.properties.embeddedApp and app.properties.embeddedApp.type == 'SharepointFormApp')
         ]
 
         textual_report = self._bypass_consent_textual_report_generator.generate_textual_report(bypass_consent_apps)

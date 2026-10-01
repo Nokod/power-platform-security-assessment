@@ -1,5 +1,3 @@
-from pydash import map_values, key_by, sort_by, values
-
 from power_platform_security_assessment.base_classes import CloudFlow, Application, User, Environment
 from power_platform_security_assessment.security_features.app_developers.app_developer_textual_report import AppDeveloperTextualReport
 from power_platform_security_assessment.security_features.app_developers.model import UserResources, AppDevelopersReport, Developers
@@ -15,14 +13,10 @@ class AppDeveloperAnalyzer:
 
     def _get_user_to_apps_and_flows_map(self, users: list[User]) -> list[UserResources]:
         # Create a map of user_id → UserResources
-        user_map: dict[str, UserResources] = map_values(
-            key_by(users, lambda user: user.azureactivedirectoryobjectid),
-            lambda user: UserResources(
-                user=user,
-                apps=[],
-                flows=[],
-            )
-        )
+        user_map: dict[str, UserResources] = {
+            user.azureactivedirectoryobjectid: UserResources(user=user, apps=[], flows=[])
+            for user in users
+        }
 
         # Map apps to their owners
         for app in self._apps:
@@ -37,9 +31,9 @@ class AppDeveloperAnalyzer:
                 user_map[owner_id].flows.append(flow)
 
         # Convert the map to a list and sort it by the number of apps and flows
-        return sort_by(
-            values(user_map),
-            lambda user_resources: len(user_resources.apps) + len(user_resources.flows),
+        return sorted(
+            user_map.values(),
+            key=lambda user_resources: len(user_resources.apps) + len(user_resources.flows),
             reverse=True,
         )
 

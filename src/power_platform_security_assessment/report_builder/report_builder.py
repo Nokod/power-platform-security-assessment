@@ -1,3 +1,4 @@
+import base64
 import os
 
 import pandas as pd
@@ -52,8 +53,12 @@ class ReportBuilder:
         __location__ = os.path.realpath(
             os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-        with open(os.path.join(__location__, 'report.html')) as f:
+        with open(os.path.join(__location__, 'report.html'), encoding='utf-8') as f:
             template = Template(f.read())
+
+        # Embedded so the report renders without depending on externally hosted images
+        with open(os.path.join(__location__, 'kanopy_logo.png'), 'rb') as f:
+            logo_data_uri = f'data:image/png;base64,{base64.b64encode(f.read()).decode()}'
 
         rendered_template = template.render(
             found_environments=env_summary,
@@ -67,8 +72,9 @@ class ReportBuilder:
             email_body=email_body,
             report_date=pd.Timestamp.now().strftime('%B %d, %Y'),
             total_envs_count=self._total_envs_count,
+            logo_data_uri=logo_data_uri,
         )
-        with open('power_platform_scan_report.html', 'w') as f:
+        with open('power_platform_scan_report.html', 'w', encoding='utf-8') as f:
             f.write(rendered_template)
             self._logger.log(
                 f'Report generated successfully. Output saved to {os.path.abspath("power_platform_scan_report.html")}')
@@ -76,7 +82,7 @@ class ReportBuilder:
     def _build_email_body(self):
         data = self.get_components_per_env()[:-1]
         output = [
-            f'Hello Nokod Team,\\n'
+            f'Hello Kanopy Team,\\n'
             f'I would like to discuss the results of the scan I made.\\n'
             f'See below findings.\\n'
         ]
@@ -94,8 +100,8 @@ class ReportBuilder:
             header=dict(values=list(df.columns),
                         fill_color=self.TITLE_COLOR,
                         align='left'),
-            cells=dict(values=[df.get('Name'), df.get('Type'), df.get('Created By'), df.get('Last Activity'),
-                               df.get('Scan Status')],
+            cells=dict(values=[df.get('Name'), df.get('Type'), df.get('Created By'), df.get('Create Time'),
+                               df.get('Last Activity'), df.get('Scan Status')],
                        fill_color=self.BACKGROUND_COLOR,
                        line=dict(color='white'),
                        align='left'))],
@@ -129,9 +135,10 @@ class ReportBuilder:
     @staticmethod
     def _create_env_data(env: Environment, failed=False):
         env_name = env.properties.displayName
-        created_by = env.properties.createdBy.get('displayName', 'N/A')
+        created_by = env.properties.createdBy.get('displayName') or 'N/A'
         created_time = round_time_to_seconds(env.properties.createdTime)
-        last_activity = round_time_to_seconds(env.properties.lastActivity.lastActivity.lastActivityTime)
+        last_activity_time = env.properties.last_activity_time
+        last_activity = round_time_to_seconds(last_activity_time) if last_activity_time else 'N/A'
         env_type = env.properties.environmentSku
         status = 'Failed - insufficient permissions' if failed else 'Success'
         env_data = {'Name': env_name, 'Type': env_type, 'Created By': created_by, 'Create Time': created_time,
@@ -216,8 +223,8 @@ class ReportBuilder:
                 align='left'))],
             layout={'title': {'text': 'Top 3 Biggest Environments', 'x': 0.5}, 'height': 300, 'annotations': [
                 go.layout.Annotation(x=0, y=-0.2, showarrow=False, xanchor='left', yanchor='bottom',
-                                     text='* Developers are users who own at least one application in the '
-                                          'environment')]})
+                                     text='* Developers are users who own at least one canvas app or cloud flow '
+                                          'in the environment')]})
         config = {'displaylogo': False, 'modeBarButtonsToRemove': ['toImage']}
         return fig.to_html(full_html=False, include_plotlyjs='cdn', config=config)
 
