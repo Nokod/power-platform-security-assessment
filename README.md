@@ -32,7 +32,7 @@ uv uses a compatible Python if you have one, and downloads one if you don't.
 
 ### Windows
 
-Open **PowerShell** and install uv:
+Open **PowerShell** and install uv (already have uv? You can skip this step):
 ```powershell
 winget install --id=astral-sh.uv -e
 ```
@@ -51,7 +51,7 @@ uvx power-platform-security-assessment@latest
 
 ### macOS
 
-Open **Terminal** and install uv:
+Open **Terminal** and install uv (already have uv? You can skip this step):
 ```bash
 brew install uv
 ```
@@ -70,6 +70,7 @@ uvx power-platform-security-assessment@latest
 
 ### Linux
 
+Install uv (already have uv? You can skip this step), then run the tool:
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 # open a new terminal, then:
